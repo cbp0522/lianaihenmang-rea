@@ -100,7 +100,7 @@ def run(args):
         elif args.stage == "plan":
             spec = text(args.prd) + "\n\n" + text(args.tasks)
             jobs = [
-                (args.planner, "用简体中文输出实现任务依赖与可并行的任务。\n" + spec,
+                (args.planner, "这是书面规划，不需要访问工具、代码或目录。直接依据下文给出完整的简体中文实施顺序、可并行任务和验收节点。\n" + spec,
                  isolated, args.out / "任务规划.md"),
                 ("claude", "用简体中文输出可执行的边界测试、验收用例和优先级。\n" + spec,
                  isolated, args.out / "测试设计.md"),
@@ -171,7 +171,7 @@ def main():
         if name in {"plan", "develop"}:
             stage.add_argument("--tasks", type=Path, required=True)
         if name == "plan":
-            stage.add_argument("--planner", choices=COMMANDS, default="codex")
+            stage.add_argument("--planner", choices=COMMANDS, default="agy")
         if name in {"develop", "review"}:
             stage.add_argument("--worktree", type=Path, required=True)
         if name == "develop":

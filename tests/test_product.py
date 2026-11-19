@@ -64,3 +64,24 @@ class RoundCounterTest(unittest.TestCase):
 
     def test_load_failure_protects_existing_record(self):
         self.run_scenario("loadFailure")
+
+    def test_transient_save_failure_retries_all_actions(self):
+        self.run_scenario("retry")
+
+    def test_unexpected_read_failure_blocks_writes_and_recovery(self):
+        self.run_scenario("readProtection")
+
+    def test_corrupt_samples_require_confirmation_and_preserve_backups(self):
+        self.run_scenario("corruption")
+
+    def test_backup_failure_preserves_original_and_can_retry(self):
+        self.run_scenario("backupFailure")
+
+    def test_recovery_write_failure_preserves_original_and_backup(self):
+        self.run_scenario("recoveryWriteFailure")
+
+    def test_recovery_rechecks_read_failure(self):
+        self.run_scenario("recoveryReadFailure")
+
+    def test_no_operations_do_not_change_count_or_write(self):
+        self.run_scenario("noOperation")

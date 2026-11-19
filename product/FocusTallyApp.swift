@@ -12,6 +12,7 @@ struct FocusTallyApp: App {
 struct RoundCounterView: View {
     @StateObject private var counter = RoundCounter()
     @State private var isShowingNewSessionAlert = false
+    @State private var isShowingRecoveryAlert = false
 
     var body: some View {
         ScrollView {
@@ -19,10 +20,6 @@ struct RoundCounterView: View {
                 Text("节奏记录")
                     .font(.largeTitle.bold())
                     .accessibilityAddTraits(.isHeader)
-
-                Text("专注练习，每一轮都算数。")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading, spacing: 24) {
                     Text("本次会话")
@@ -45,7 +42,7 @@ struct RoundCounterView: View {
                             .frame(maxWidth: .infinity, minHeight: 44)
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(counter.storageError != nil)
+                    .disabled(!counter.canRecord)
                     .accessibilityHint("为本次会话增加一轮，并保存记录")
                     .accessibilityIdentifier("recordRound")
 
@@ -76,6 +73,21 @@ struct RoundCounterView: View {
                         .foregroundStyle(.red)
                 }
 
+                if counter.canRecover {
+                    Button("恢复本地记录") {
+                        counter.requestRecovery()
+                        isShowingRecoveryAlert = counter.isRecoveryRequested
+                    }
+                    .accessibilityHint("确认后备份损坏文件，并从零轮重新开始")
+                    .accessibilityIdentifier("recoverRecord")
+                    .alert("恢复本地记录？", isPresented: $isShowingRecoveryAlert) {
+                        Button("取消", role: .cancel, action: counter.cancelRecovery)
+                        Button("备份并重新开始", role: .destructive, action: counter.confirmRecovery)
+                    } message: {
+                        Text("将保留损坏文件的独立备份，再写入 0 轮。已有备份会保留。")
+                    }
+                }
+
                 Text("记录自动保存在此设备。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -86,6 +98,9 @@ struct RoundCounterView: View {
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .tint(.indigo)
+        .onChange(of: counter.count) { _, count in
+            AccessibilityNotification.Announcement("已记录 \(count) 轮").post()
+        }
         .alert("开始新会话？", isPresented: $isShowingNewSessionAlert) {
             Button("取消", role: .cancel, action: counter.cancelNewSession)
             Button("确认开始", role: .destructive, action: counter.confirmNewSession)
