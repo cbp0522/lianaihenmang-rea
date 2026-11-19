@@ -85,3 +85,6 @@ class RoundCounterTest(unittest.TestCase):
 
     def test_no_operations_do_not_change_count_or_write(self):
         self.run_scenario("noOperation")
+
+    def test_recovery_loads_a_record_repaired_before_confirmation(self):
+        self.run_scenario("recoveredExternally")

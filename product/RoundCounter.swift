@@ -4,7 +4,7 @@ import Foundation
 protocol RoundCountStore {
     func load() throws -> Int
     func save(_ count: Int) throws
-    func recoverCorruptedRecord() throws
+    func recoverCorruptedRecord() throws -> Int
 }
 
 enum RoundStorageIssue: Error {
@@ -58,13 +58,12 @@ struct LocalRoundCountStore: RoundCountStore {
         try writeData(JSONEncoder().encode(count), fileURL)
     }
 
-    func recoverCorruptedRecord() throws {
-        // Recheck before recovery: a new read failure must never authorize a reset.
+    func recoverCorruptedRecord() throws -> Int {
+        // 文件若已恢复可读，直接采用当前计数。
         do {
-            _ = try load()
-            throw RoundStorageIssue.loadFailed
+            return try load()
         } catch RoundStorageIssue.corruptedRecord {
-            // A unique destination plus copyItem's no-overwrite behavior preserves history.
+            // 确认仍然损坏后再创建独立备份。
         } catch {
             throw RoundStorageIssue.loadFailed
         }
@@ -79,6 +78,7 @@ struct LocalRoundCountStore: RoundCountStore {
         } catch {
             throw RoundStorageIssue.recoverySaveFailed
         }
+        return 0
     }
 }
 
@@ -153,8 +153,7 @@ final class RoundCounter: ObservableObject {
         guard isRecoveryRequested && canRecover else { return }
         isRecoveryRequested = false
         do {
-            try store.recoverCorruptedRecord()
-            count = 0
+            count = try store.recoverCorruptedRecord()
             storageIssue = nil
         } catch let issue as RoundStorageIssue {
             storageIssue = issue

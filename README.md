@@ -29,7 +29,7 @@ sample=~/app-research/新样本
 - `media.json` 记录媒体哈希和 Vision OCR。FFmpeg 每两秒抽取一帧，每段最多 12 帧。关键跳转用独立截图或短录屏保留。
 - 按 `examples/observations.json` 记录已核对的动作与结果，再加 `--observations "$sample/observations.json"` 重生成报告。PRD 依赖已核对的观察编号，静态资源无法证明业务规则。仅提供公开资料或截图也能生成报告。
 
-用 Agent 拟定原创功能和验收条件，或按 `examples/design.json` 编写自己的设计。运行时可选择发送的报告和 PRD，应先剔除真实账户、截图私密文字、访问令牌与受保护素材。CLI 推理使用所选厂商服务，Antigravity 的普通输出模式会把本次任务正文作为本地命令参数，研究脚本的解析和 OCR 在本机运行。
+用 Agent 拟定原创功能和验收条件，或按 `examples/design.json` 编写自己的设计。运行时可选择发送的报告和 PRD，应先剔除真实账户、截图私密文字、访问令牌与受保护素材。CLI 调度器通过标准输入传递本次任务正文，推理使用所选厂商服务。研究脚本的解析和 OCR 在本机运行。
 
 ```bash
 /usr/bin/python3 tools/agents.py research --providers claude \
@@ -62,7 +62,7 @@ bash tools/draft.sh '原创功能的中文标题' "$sample/PR说明.md"
 gh pr checks --watch
 ```
 
-草稿发布命令在检查通过后推送当前开发分支。对已存在的同分支 PR 返回现有链接。GitHub Actions 执行脚本语法、Python 测试、Swift 产品验收和模拟器编译。Kandev 已用本项目验证原生 Codex 工作树；Gemini 的任务规划在 CLI 编排器运行。Kandev 会话与 CLI 报告各自保留在本机。
+草稿发布命令在检查通过后推送当前开发分支。对已存在的同分支 PR 返回现有链接。GitHub Actions 执行脚本语法、Python 测试、Swift 产品验收和模拟器编译。Kandev 已用本项目验证原生 Codex、Claude 工作树。Gemini 的任务规划在 CLI 编排器运行。Kandev 会话与 CLI 报告各自保留在本机。
 
 ## 复现自制样本
 
@@ -80,4 +80,4 @@ bash tools/check.sh
 
 先迁移仓库和需要保留的研究资料，按需安装 Python、Agent CLI、FFmpeg 与 pinned Kandev，再以普通用户运行 `infra/start-kandev.sh`。安装版本通过 `npm install --prefix ~/ai-dev-infra/kandev kandev@0.102.0` 固定。把环境变量及本地数据目录放在版本库外。SQLite 用 Kandev 备份功能导出，恢复前保留原副本，模型厂商凭据在新主机重新登录。
 
-IPA 链接信息读取、Apple Vision 和 iOS 签名、模拟器或实机操作留在 Mac，VPS 接收结构化证据和验收结果。Kandev 可由独立用户的 systemd 单元托管。未来若需手机管理，在 Tailscale 内网接入，使用服务端认证和 ACL 将可访问设备限定为自己，保持 Kandev 本机回环监听。当前安装保持本地访问。Mac 后台入口已在当前用户的 LaunchAgent 注册，日志位于 `~/ai-dev-infra/kandev-service.log`。重新登录后可运行 `launchctl bootstrap gui/$(id -u) ~/ai-dev-infra/local.ios-research.kandev.plist` 恢复本次用户级注册。
+IPA 链接信息读取、Apple Vision 和 iOS 签名、模拟器或实机操作留在 Mac，VPS 接收结构化证据和验收结果。Kandev 可由独立用户的 systemd 单元托管。未来若需手机管理，在 Tailscale 内网接入，使用服务端认证和 ACL 将可访问设备限定为自己，保持 Kandev 本机回环监听。当前安装保持本地访问。本次 Mac 用户级后台注册和恢复命令见交付的本机验收说明。

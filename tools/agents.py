@@ -20,7 +20,8 @@ COMMANDS = {
                "--no-session-persistence"],
     "gemini": ["gemini", "-p", "只根据标准输入回答。", "--approval-mode", "plan",
                "--allowed-mcp-server-names", "ios-research-disabled", "--skip-trust"],
-    "agy": ["agy", "--mode", "plan", "--sandbox", "--print-timeout", "120s"],
+    "agy": ["agy", "--mode", "plan", "--sandbox", "--print-timeout", "120s",
+            "--input-format", "stream-json", "--output-format", "stream-json"],
 }
 EXCLUDE_ENV = {
     "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "GEMINI_API_KEY",
@@ -40,8 +41,8 @@ def invoke(provider, prompt, cwd, output, editable=False):
         cmd += ["--sandbox", "workspace-write" if editable else "read-only",
                 "--output-last-message", str(output), "-"]
     if provider == "agy":
-        cmd.append("--print=" + prompt)
-        prompt = ""
+        prompt = json.dumps({"event": "user", "message": {"content": prompt}},
+                            ensure_ascii=False) + "\n"
     output.parent.mkdir(parents=True, exist_ok=True)
     if output.exists():
         output.unlink()
@@ -50,7 +51,16 @@ def invoke(provider, prompt, cwd, output, editable=False):
                                 stderr=log, cwd=cwd, env=env, timeout=600)
     if result.returncode:
         raise RuntimeError(f"{provider} 退出码 {result.returncode}，日志 {output.with_suffix('.log')}")
-    if provider != "codex":
+    if provider == "agy":
+        try:
+            events = (json.loads(line) for line in result.stdout.splitlines() if line.strip())
+            reply = next(event["result"] for event in events if event.get("event") == "result")
+            if reply["status"] != "SUCCESS" or not isinstance(reply["response"], str):
+                raise ValueError("未收到成功响应")
+            output.write_text(reply["response"], encoding="utf-8")
+        except (ValueError, KeyError, TypeError, StopIteration) as exc:
+            raise RuntimeError(f"Antigravity 返回的流式结果无效，日志 {output.with_suffix('.log')}") from exc
+    elif provider != "codex":
         output.write_text(result.stdout, encoding="utf-8")
     if not output.is_file() or not output.read_text(encoding="utf-8").strip():
         raise RuntimeError(f"{provider} 未返回正文")

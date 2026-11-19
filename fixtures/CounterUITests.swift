@@ -9,10 +9,10 @@ final class CounterUITests: XCTestCase {
         XCTAssertTrue(label.waitForExistence(timeout: 10))
         attachScreen(app, named: "实机或模拟器-初始")
         app.buttons["增加一次"].tap()
-        XCTAssertTrue(app.staticTexts["当前数值 1"].exists)
+        XCTAssertTrue(app.staticTexts["当前数值 1"].waitForExistence(timeout: 5))
         attachScreen(app, named: "实机或模拟器-增加")
         app.buttons["归零"].tap()
-        XCTAssertTrue(label.exists)
+        XCTAssertTrue(label.waitForExistence(timeout: 5))
         attachScreen(app, named: "实机或模拟器-归零")
     }
 

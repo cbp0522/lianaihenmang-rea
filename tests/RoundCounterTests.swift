@@ -16,7 +16,7 @@ private struct FailingStore: RoundCountStore {
         return 3
     }
     func save(_ count: Int) throws { throw TestFailure.storage }
-    func recoverCorruptedRecord() throws { throw TestFailure.storage }
+    func recoverCorruptedRecord() throws -> Int { throw TestFailure.storage }
 }
 
 private final class TransientStore: RoundCountStore {
@@ -37,7 +37,10 @@ private final class TransientStore: RoundCountStore {
         }
         value = count
     }
-    func recoverCorruptedRecord() throws { recoveryAttempts += 1 }
+    func recoverCorruptedRecord() throws -> Int {
+        recoveryAttempts += 1
+        return 0
+    }
 }
 
 @main
@@ -157,7 +160,7 @@ struct RoundCounterTests {
             try FileManager.default.createDirectory(at: store.fileURL, withIntermediateDirectories: true)
             let directoryModel = RoundCounter(store: store)
             try expect(directoryModel.storageIssue == .loadFailed && !directoryModel.canRecover, "目录等读取故障不能判为损坏")
-        case "corruption", "backupFailure", "recoveryWriteFailure", "recoveryReadFailure":
+        case "corruption", "backupFailure", "recoveryWriteFailure", "recoveryReadFailure", "recoveredExternally":
             try testRecovery(scenario, store: store)
         case "noOperation":
             let memory = TransientStore()
@@ -232,6 +235,9 @@ struct RoundCounterTests {
                 try FileManager.default.removeItem(at: store.fileURL)
                 try FileManager.default.createDirectory(at: store.fileURL, withIntermediateDirectories: false)
             }
+            if scenario == "recoveredExternally" {
+                try store.save(5)
+            }
             model.requestRecovery()
             model.confirmRecovery()
             let after = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
@@ -245,6 +251,9 @@ struct RoundCounterTests {
                 try expect(try Data(contentsOf: store.fileURL) == original, "写入失败必须保留坏文件")
             case "recoveryReadFailure":
                 try expect(model.storageIssue == .loadFailed && !model.canRecover && added.isEmpty, "恢复前读取失败不能备份或重置")
+            case "recoveredExternally":
+                try expect(model.storageIssue == nil && model.count == 5 && added.isEmpty, "已恢复的有效记录应被读回")
+                try expect(tryLoad(store) == 5, "已恢复的记录不得重置")
             default:
                 try expect(model.storageError == nil && model.count == 0 && model.canRecord, "确认恢复后可以从零记录")
                 try expect(tryLoad(store) == 0, "恢复后应保存零轮")

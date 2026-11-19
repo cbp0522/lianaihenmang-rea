@@ -74,9 +74,11 @@ struct RoundCounterView: View {
                 }
 
                 if counter.canRecover {
-                    Button("恢复本地记录") {
+                    Button {
                         counter.requestRecovery()
                         isShowingRecoveryAlert = counter.isRecoveryRequested
+                    } label: {
+                        Text("恢复本地记录").frame(minHeight: 44)
                     }
                     .accessibilityHint("确认后备份损坏文件，并从零轮重新开始")
                     .accessibilityIdentifier("recoverRecord")
@@ -99,7 +101,7 @@ struct RoundCounterView: View {
         .background(Color(uiColor: .systemGroupedBackground))
         .tint(.indigo)
         .onChange(of: counter.count) { _, count in
-            AccessibilityNotification.Announcement("已记录 \(count) 轮").post()
+            AccessibilityNotification.Announcement("当前 \(count) 轮").post()
         }
         .alert("开始新会话？", isPresented: $isShowingNewSessionAlert) {
             Button("取消", role: .cancel, action: counter.cancelNewSession)
