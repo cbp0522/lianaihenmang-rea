@@ -35,6 +35,7 @@ struct RoundCounterView: View {
                     }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("已记录 \(counter.count) 轮")
+                    .accessibilityValue("\(counter.count) 轮")
                     .accessibilityIdentifier("roundCount")
 
                     Button(action: counter.recordRound) {
