@@ -21,7 +21,13 @@ RESOURCE = {".car", ".png", ".jpg", ".jpeg", ".heic", ".pdf", ".json", ".strings
             ".stringsdict", ".ttf", ".otf", ".mp3", ".wav", ".mp4", ".storyboardc"}
 PLIST_KEYS = ("CFBundleIdentifier", "CFBundleDisplayName", "CFBundleName",
               "CFBundleShortVersionString", "CFBundleVersion", "MinimumOSVersion",
-              "CFBundleSupportedPlatforms", "UIDeviceFamily", "UIBackgroundModes")
+              "CFBundleSupportedPlatforms", "UIDeviceFamily", "UIBackgroundModes",
+              "LSApplicationQueriesSchemes", "SKAdNetworkItems", "CFBundleURLTypes")
+COMPONENT_KEYS = ("CFBundleIdentifier", "CFBundleVersion", "CFBundleShortVersionString",
+                  "CFBundlePackageType", "MinimumOSVersion", "NSExtension")
+PRIVACY_KEYS = ("NSPrivacyTracking", "NSPrivacyTrackingDomains",
+                "NSPrivacyAccessedAPITypes", "NSPrivacyCollectedDataTypes")
+STRUCTURED_LIMIT = 1024 * 1024
 
 
 def digest(path):
@@ -43,6 +49,9 @@ def inspect_binary(archive, member):
                                timeout=60)
         links = subprocess.run(["otool", "-L", str(binary)], capture_output=True, text=True,
                                timeout=60)
+        signature = (subprocess.run(["codesign", "-d", "--entitlements", "-", str(binary)],
+                                    capture_output=True, timeout=60)
+                     if shutil.which("codesign") else None)
     if loads.returncode or not re.search(r"(?m)^Load command \d+", loads.stdout):
         return {"状态": "未分析：可执行文件不是 otool 可识别的 Mach-O"}
     cryptids = [int(value) for value in re.findall(r"(?m)^\s*cryptid\s+(\d+)", loads.stdout)]
@@ -53,8 +62,73 @@ def inspect_binary(archive, member):
         "加密标记": cryptids if cryptids else "未见加密加载命令",
         "平台标识": platform_ids,
         "动态依赖": sorted(set(dylibs)) if links.returncode == 0 else "未能读取",
+        "签名能力": signed_entitlements(signature),
         "实现范围": "客户端函数行为、服务端逻辑和依赖的实际调用情况未验证",
     }
+
+
+def signed_entitlements(signature):
+    if signature is None or signature.returncode:
+        return "未读取：缺少 codesign 或可执行文件签名无法识别"
+    if not signature.stdout:
+        return "主可执行文件签名未返回 entitlements"
+    try:
+        result = plistlib.loads(signature.stdout)
+        return result if isinstance(result, dict) else "未读取：签名能力格式未知"
+    except (ValueError, plistlib.InvalidFileException):
+        return "未读取：签名能力格式未知"
+
+
+def bundle_metadata(archive, prefix, relative):
+    """读取本地资源线索。文案和声明只写入结构化证据。"""
+    privacy, components, strings, unavailable = {}, {}, {}, {}
+    locales = set()
+    for name in relative:
+        path = PurePosixPath(name)
+        locales.update(part[:-6] for part in path.parts if part.endswith(".lproj"))
+        if path.name == "PrivacyInfo.xcprivacy":
+            target, keys = privacy, PRIVACY_KEYS
+        elif path.name == "Info.plist" and any(part.endswith((".framework", ".appex", ".bundle",
+                                                                 ".app")) for part in path.parts[:-1]):
+            target, keys = components, COMPONENT_KEYS
+        elif path.name == "Localizable.strings" and path.parent.suffix == ".lproj":
+            target, keys = strings, None
+        else:
+            continue
+        member = archive.getinfo(prefix + name)
+        if member.file_size > STRUCTURED_LIMIT:
+            unavailable[name] = "大于 1 MiB"
+            continue
+        data = archive.read(member)
+        try:
+            value = plistlib.loads(data)
+        except (ValueError, plistlib.InvalidFileException):
+            value = parse_strings(data) if target is strings else None
+        if not isinstance(value, dict):
+            unavailable[name] = "格式未识别"
+        elif keys is not None:
+            target[name] = {key: value[key] for key in keys if key in value}
+        else:
+            entries = sorted((key, text) for key, text in value.items()
+                             if isinstance(key, str) and isinstance(text, str))
+            target[name] = {"文案条数": len(entries),
+                            "本地预览": {key: text[:160] for key, text in entries[:30]}}
+    return {"本地化语言": sorted(locales), "隐私清单": privacy, "嵌入组件配置": components,
+            "本地化文案": strings, "未读取的资源": unavailable}
+
+
+def parse_strings(data):
+    """用系统 plutil 读取传统文本 .strings，无法解析时保留未知状态。"""
+    if sys.platform != "darwin" or not shutil.which("plutil"):
+        return None
+    result = subprocess.run(["plutil", "-convert", "json", "-o", "-", "--", "-"],
+                            input=data, capture_output=True, timeout=15)
+    if result.returncode:
+        return None
+    try:
+        return json.loads(result.stdout)
+    except ValueError:
+        return None
 
 
 def inspect_ipa(path):
@@ -91,6 +165,7 @@ def inspect_ipa(path):
             "签名目录": any(name.startswith("_CodeSignature/") for name in relative),
             "嵌入组件": frameworks,
             "资源文件计数": dict(sorted(resource_types.items())),
+            "资源线索": bundle_metadata(archive, prefix, relative),
             "资产目录中的单个资源": "未知，未解包资产目录",
             "第三方 SDK": "组件名称和动态依赖仅为识别线索，静态链接 SDK 未确认",
             "可执行文件": binary,
@@ -135,27 +210,38 @@ def recognize(tool, image):
     return run.stdout.strip() if run.returncode == 0 else "文字识别失败"
 
 
+def video_frames(ffmpeg, path, tool, unavailable):
+    with tempfile.TemporaryDirectory() as temp:
+        frames = Path(temp)
+        # 先判断原始画面变化，再缩小到 OCR 用的尺寸。静态片段每 15 秒取一帧。
+        filters = ("select='isnan(prev_selected_t)+gte(t-prev_selected_t,15)"
+                   "+gt(scene,0.3)*gte(t-prev_selected_t,1)',showinfo,"
+                   "scale=900:900:force_original_aspect_ratio=decrease")
+        run = subprocess.run([ffmpeg, "-nostdin", "-hide_banner", "-loglevel", "info",
+                              "-i", str(path), "-vf", filters, "-fps_mode", "vfr",
+                              str(frames / "%06d.png")], capture_output=True, text=True,
+                             errors="replace", timeout=600)
+        times = re.findall(r"\bn:\s*\d+\s+pts:.*?\bpts_time:([-+.\deE]+)", run.stderr)
+        selected = [{"秒": float(second), "屏幕文字": recognize(tool, frame) if tool else unavailable}
+                    for second, frame in zip(times, sorted(frames.glob("*.png")))]
+        status = ("全片场景切换与 15 秒间隔补帧" if run.returncode == 0 and selected
+                  else "抽帧未完成或未识别到视频帧")
+        return {"视频抽帧": selected, "抽帧状态": status}
+
+
 def scan_media(files, out, use_ocr):
     cache = out / ".cache"
     cache.mkdir(exist_ok=True)
     tool, unavailable = ocr_command(cache) if use_ocr else (None, "未请求文字识别")
     ffmpeg = shutil.which("ffmpeg")
     evidence = {}
-    for index, (name, path) in enumerate(files.items(), 1):
-        item = {"编号": f"M{index:02d}", "文件": name, "SHA-256": digest(path)}
+    for name, path in files.items():
+        sha256 = digest(path)
+        item = {"编号": f"M-{name}-{sha256[:12]}", "文件": name, "SHA-256": sha256}
         if path.suffix.lower() not in VIDEO:
             item["屏幕文字"] = recognize(tool, path) if tool else unavailable
         elif ffmpeg:
-            with tempfile.TemporaryDirectory() as temp:
-                frames = Path(temp)
-                run = subprocess.run([ffmpeg, "-nostdin", "-loglevel", "error", "-i", str(path),
-                                      "-vf", "fps=1/2:start_time=0", "-frames:v", "12",
-                                      str(frames / "%03d.png")], capture_output=True, timeout=120)
-                item["视频抽帧"] = [
-                    {"秒": i * 2, "屏幕文字": recognize(tool, frame) if tool else unavailable}
-                    for i, frame in enumerate(sorted(frames.glob("*.png")))
-                ]
-                item["抽帧状态"] = "每 2 秒最多取 12 帧" if run.returncode == 0 else "抽帧失败"
+            item.update(video_frames(ffmpeg, path, tool, unavailable))
         else:
             item["抽帧状态"] = "未分析录屏：缺少 FFmpeg"
         evidence[name] = item
@@ -186,19 +272,39 @@ def plan_docs(path, seen):
     features = plan["features"]
     if not all((title, goal, design, features)):
         raise ValueError("设计需要标题、目标、规范及至少一个功能")
-    prd = [f"# {title} PRD", "", "## 产品目标", "", goal, "", "## 设计规范", "", design, "",
-           "## 功能与验收"]
-    tasks = [f"# {title} 开发任务", "", "实现 Agent 只读取本任务和 PRD，在独立 worktree 提交。",
+    prd = [f"# {title} PRD", "", "## 产品目标", "", goal, "", "## 设计规范", "", design, ""]
+    for key, heading in (("navigation", "页面与导航"), ("user_flows", "用户流程"),
+                         ("data_model", "数据与状态"), ("business_rules", "关键业务规则"),
+                         ("exception_states", "异常状态"),
+                         ("non_goals", "非目标"), ("milestones", "优先级与里程碑")):
+        note = plan.get(key, "").strip()
+        if note:
+            prd += [f"## {heading}", "", note, ""]
+    prd.append("## 功能与验收")
+    tasks = [f"# {title} 开发任务", "", "以 PRD、任务和已有实现为输入，在独立 worktree 实现。",
              "测试任务可并行编写，在实现完成后执行。审查 Agent 核对改动和验收结果。"]
     for index, feature in enumerate(features, 1):
-        refs = feature["observations"]
-        if not refs or any(ref not in seen for ref in refs):
-            raise ValueError(f"第 {index} 个功能缺少已采集的行为证据")
+        refs = feature.get("observations", [])
+        basis = feature.get("basis", "历史引用待复核")
+        if "basis" in feature and basis not in ("观察", "推断", "原创"):
+            raise ValueError(f"第 {index} 个功能的 basis 必须为观察、推断或原创")
+        if (not isinstance(refs, list) or any(ref not in seen for ref in refs)
+                or (basis != "原创" and not refs)):
+            raise ValueError(f"第 {index} 个功能的观察引用缺少已采集的行为证据")
+        assumption = feature.get("assumption", "").strip()
+        if basis == "推断" and not assumption:
+            raise ValueError(f"第 {index} 个功能的推断需要声明假设和可验证条件")
         name, acceptance = feature["name"].strip(), feature["acceptance"].strip()
         if not name or not acceptance:
             raise ValueError(f"第 {index} 个功能缺少名称或验收条件")
         req = f"F{index:02d}"
-        prd += ["", f"### {req} {name}", "", f"研究参考 {'、'.join(refs)}。", "", acceptance]
+        prd += ["", f"### {req} {name}", "", f"依据类型为{basis}。"]
+        if refs:
+            label = "背景观察" if basis == "原创" else "关联观察"
+            prd += [f"{label} {'、'.join(refs)}。"]
+        if assumption:
+            prd += [f"待验证假设为{assumption}"]
+        prd += ["", acceptance]
         tasks += ["", f"- 实现 {req} {name}。", f"- 测试 {req}。{acceptance}"]
     return "\n".join(prd) + "\n", "\n".join(tasks) + "\n"
 
@@ -216,12 +322,19 @@ def run(args):
     lines += [f"- {source}" for source in args.source] or ["- 未记录公开来源"]
     lines += ["", "## 静态分析", ""]
     if static:
+        binary = static["可执行文件"]
+        resources = static["资源线索"]
         lines += ["证据 A01。完整结构化结果见 `static.json`。", "",
                   f"- 样本 `{static['来源文件']}`",
                   f"- 主应用路径 `{static['主应用']}`",
                   f"- 资源类型 {json.dumps(static['资源文件计数'], ensure_ascii=False)}",
                   f"- 嵌入组件候选 {static['嵌入组件'] or '未见'}",
-                  f"- {static['可执行文件']['状态']}"]
+                  f"- {binary['状态']}",
+                  f"- 主程序加密标记 {binary.get('加密标记', '未知')}。0 表示该加载命令未声明加密。",
+                  f"- 本地化语言 {'、'.join(resources['本地化语言']) or '未见'}。",
+                  f"- 已读取隐私清单 {len(resources['隐私清单'])} 份、内嵌配置 "
+                  f"{len(resources['嵌入组件配置'])} 份、文案表 {len(resources['本地化文案'])} 份。",
+                  "- 签名能力、URL 声明和 SDK 线索见本地结构化结果。"]
     else:
         lines += ["未提供 IPA。"]
     lines += ["", "## 屏幕证据", ""]
