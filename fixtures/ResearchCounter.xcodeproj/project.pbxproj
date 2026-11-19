@@ -1,0 +1,49 @@
+// !$*UTF8*$!
+{
+ archiveVersion = 1;
+ classes = {};
+ objectVersion = 56;
+ objects = {
+  000000000000000000000001 = {isa = PBXProject; buildConfigurationList = 000000000000000000000008; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; knownRegions = (en, Base); mainGroup = 000000000000000000000002; productRefGroup = 000000000000000000000003; projectDirPath = ""; projectRoot = ""; targets = (000000000000000000000004); };
+  000000000000000000000002 = {isa = PBXGroup; children = (000000000000000000000005, 000000000000000000000003); sourceTree = "<group>"; };
+  000000000000000000000003 = {isa = PBXGroup; children = (000000000000000000000006); name = Products; sourceTree = "<group>"; };
+  000000000000000000000004 = {
+   isa = PBXNativeTarget;
+   buildConfigurationList = 000000000000000000000009;
+   buildPhases = (000000000000000000000007);
+   buildRules = ();
+   dependencies = ();
+   name = ResearchCounter;
+   productName = ResearchCounter;
+   productReference = 000000000000000000000006;
+   productType = "com.apple.product-type.application";
+  };
+  000000000000000000000005 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Counter.swift; sourceTree = "<group>"; };
+  000000000000000000000006 = {isa = PBXFileReference; explicitFileType = wrapper.application; path = ResearchCounter.app; sourceTree = BUILT_PRODUCTS_DIR; };
+  000000000000000000000007 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (00000000000000000000000A); runOnlyForDeploymentPostprocessing = 0; };
+  000000000000000000000008 = {isa = XCConfigurationList; buildConfigurations = (00000000000000000000000B); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
+  000000000000000000000009 = {isa = XCConfigurationList; buildConfigurations = (00000000000000000000000C); defaultConfigurationIsVisible = 0; defaultConfigurationName = Debug; };
+  00000000000000000000000A = {isa = PBXBuildFile; fileRef = 000000000000000000000005; };
+  00000000000000000000000B = {isa = XCBuildConfiguration; buildSettings = {}; name = Debug; };
+  00000000000000000000000C = {
+   isa = XCBuildConfiguration;
+   buildSettings = {
+    CODE_SIGN_STYLE = Automatic;
+    CURRENT_PROJECT_VERSION = 1;
+    GENERATE_INFOPLIST_FILE = YES;
+    INFOPLIST_KEY_CFBundleDisplayName = "样本计数器";
+    INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+    IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+    MARKETING_VERSION = 1.0;
+    PRODUCT_BUNDLE_IDENTIFIER = org.iosresearch.ResearchCounter;
+    PRODUCT_NAME = "$(TARGET_NAME)";
+    SDKROOT = iphoneos;
+    SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+    SWIFT_VERSION = 5.0;
+    TARGETED_DEVICE_FAMILY = "1,2";
+   };
+   name = Debug;
+  };
+ };
+ rootObject = 000000000000000000000001;
+}
