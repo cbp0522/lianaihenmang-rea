@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: macos-15
@@ -15,6 +19,22 @@ jobs:
         with:
           python-version: '3.13'
       - run: bash tools/check.sh
+      - name: 验证真实 arm64 Mach-O IPA
+        run: |
+          bash tools/build-ios.sh fixture device "$RUNNER_TEMP/research-fixture"
+          python3 tools/research.py --ipa "$RUNNER_TEMP/research-fixture/ResearchCounter.ipa" \
+            --out "$RUNNER_TEMP/research-report"
+          jq -e '(.["可执行文件"]["加密标记"] == [0]) and
+            (.["可执行文件"]["动态依赖"] | any(contains("SwiftUI")))' "$RUNNER_TEMP/research-report/static.json"
+          rg -F '主程序加密标记 [0]' "$RUNNER_TEMP/research-report/研究报告.md"
+      - name: 运行样本 XCTest
+        run: |
+          simulator="$(xcrun simctl list devices available -j | jq -er '
+            [.devices | to_entries | sort_by(.key) | reverse | .[] |
+             select(.key | contains(".iOS-")) | .value[] | select(.name | startswith("iPhone"))][0].udid')"
+          xcodebuild test -project fixtures/ResearchCounter.xcodeproj -scheme ResearchCounter \
+            -destination "platform=iOS Simulator,id=$simulator" \
+            -derivedDataPath "$RUNNER_TEMP/fixture-derived" -parallel-testing-enabled NO
       - name: 编译原创 iOS 产品
         run: |
           bash tools/build-ios.sh product simulator "$RUNNER_TEMP/focus-sim"

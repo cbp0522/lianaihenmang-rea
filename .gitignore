@@ -5,3 +5,10 @@ __pycache__/
 *.xcresult/
 .build/
 .cache/
+*.jpg
+*.jpeg
+*.png
+*.heic
+*.mov
+*.mp4
+report/

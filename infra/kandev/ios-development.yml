@@ -1,0 +1,135 @@
+version: 2
+type: kandev_workflow
+workflows:
+  - name: iOS 原创开发（Gemini）
+    description: 使用独立会话完成规划、实现、审查、验收和 Draft PR。
+    steps:
+      - name: Spec
+        position: 0
+        color: bg-sky-500
+        is_start_step: true
+        allow_manual_move: true
+        wip_limit: 1
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: &claude {agent_name: Claude, model: default, mode: auto}
+        profile_session_start_policy: new
+        events:
+          on_enter: &run [{type: auto_start_agent}]
+          on_turn_complete: [{type: move_to_step, config: {step_position: 1}}]
+        prompt: |
+          {{task_prompt}}
+
+          读取任务指定的 PRD、开发任务和现有实现。用 mktemp -d 在仓库外创建临时目录，将任务范围、已读代码的位置和验收要求写入 brief.md。运行 /usr/bin/python3 tools/agents.py spec --prd <任务指定的PRD> --tasks <任务指定的开发任务> --brief <临时brief.md> --out <临时目录>。该命令只调用现有 Antigravity，禁止改用其他模型。成功后读取 Gemini实施计划.md，使用 create_task_plan_kandev 保存完整 Gemini 计划。用 step_complete_kandev 交接规划来源及文件范围。规划失败时报告日志并停在本步骤。
+      - name: Work
+        position: 1
+        color: bg-blue-500
+        allow_manual_move: true
+        wip_limit: 1
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: &codex {agent_name: Codex, model: gpt-6.2-sol, mode: agent}
+        profile_session_start_policy: new
+        events:
+          on_enter: *run
+          on_turn_complete: [{type: move_to_step, config: {step_position: 2}}]
+        prompt: |
+          {{task_prompt}}
+
+          从 get_task_plan_kandev 读取并使用已保存的计划。仅在任务的非主分支独立工作树修改指定范围。执行任务验收命令，通过后只暂存任务涉及的文件并提交。提交前检查差异，研究原始资料、媒体和账户信息留在仓库外。用 step_complete_kandev 交接提交哈希和验证结果。此步骤不推送。
+      - name: QA
+        position: 2
+        color: bg-violet-500
+        allow_manual_move: true
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: *codex
+        profile_session_start_policy: new
+        events:
+          on_enter: *run
+          on_turn_complete: [{type: move_to_step, config: {step_position: 3}}]
+        prompt: |
+          {{task_prompt}}
+
+          在同一任务工作树运行 bash tools/check.sh 及任务指定的验收命令，核对当前 HEAD 与 Work 交接提交相符。通过时用 step_complete_kandev 交接实际命令、结果及提交哈希。验收失败时保留日志并停在本步骤。
+      - name: Review
+        position: 3
+        color: bg-amber-500
+        allow_manual_move: true
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: *claude
+        profile_session_start_policy: new
+        events:
+          on_enter: *run
+          on_turn_complete: [{type: move_to_step, config: {step_position: 4}}]
+        prompt: |
+          {{task_prompt}}
+
+          用 get_task_plan_kandev 读取共享计划。独立审查相对指定基线的差异。只写可复现的问题、位置、影响及验收方法。用 update_task_plan_kandev 的 append 模式追加「独立审查」段，结论明确为「通过」或「需修复」，列出哪些内容必须修正。保存成功后用 step_complete_kandev 交接结论与被审提交。此阶段只读代码；不得直接改源码或推送。
+      - name: Fix
+        position: 4
+        color: bg-orange-500
+        allow_manual_move: true
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: *codex
+        profile_session_start_policy: new
+        events:
+          on_enter: *run
+          on_turn_complete: [{type: move_to_step, config: {step_position: 5}}]
+        prompt: |
+          {{task_prompt}}
+
+          用 get_task_plan_kandev 读取 Review 保存的「独立审查」结论。需要修复时仅处理该段可复现的发现，运行 bash tools/check.sh 和相应验收，再提交任务范围内的修复。审查已通过时保持原提交。此环节最多一次修复轮次；失败则保留日志停在本步骤。成功时用 step_complete_kandev 交接所读反馈、修复结果、测试及当前提交。
+      - name: Verify
+        position: 5
+        color: bg-yellow-500
+        allow_manual_move: true
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: *claude
+        profile_session_start_policy: new
+        events:
+          on_enter: *run
+          on_turn_complete: [{type: move_to_step, config: {step_position: 6}}]
+        prompt: |
+          {{task_prompt}}
+
+          用 get_task_plan_kandev 读取独立审查结论，依 Fix 交接核对修订和测试结果。若发现尚未解决，留下位置和复现方式，停在本步骤，不再自动重试。满足验收时用 step_complete_kandev 交接通过的准确提交。此阶段只读代码。
+      - name: Draft PR
+        position: 6
+        color: bg-indigo-500
+        allow_manual_move: true
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: *codex
+        profile_session_start_policy: new
+        events:
+          on_enter: *run
+          on_turn_complete: [{type: move_to_step, config: {step_position: 7}}]
+        prompt: |
+          {{task_prompt}}
+
+          本步骤只向 cbp0522/lianaihenmang-rea 发布 Draft PR。先确认 origin 指向该仓库、工作树干净、当前分支不是 main 或 master，Verify 交接中的哈希等于 HEAD，基线与任务明确授权的目标分支一致。仅推送当前非主分支。HTTPS 可用 git -c 'credential.helper=!gh auth git-credential' push 推送。优先复用同一 head 和 base 的现有 Draft PR。使用 gh pr create --draft 显式指定仓库、head 和 base。说明中文变更范围和验收结果。核对 GitHub 返回 isDraft=true 及准确 HEAD，用 step_complete_kandev 交接 PR URL、编号和哈希。不得合并、发布或修改仓库设置。
+      - name: CI
+        position: 7
+        color: bg-cyan-500
+        allow_manual_move: true
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: *codex
+        profile_session_start_policy: new
+        events:
+          on_enter: *run
+          on_turn_complete: [{type: move_to_step, config: {step_position: 8}}]
+        prompt: |
+          {{task_prompt}}
+
+          根据 Draft PR 交接用 gh 检查目标 PR 的最新 HEAD 以及该提交的全部 CI 检查，至少包含 check。若 CI 尚未注册，等待并重查。仅在对应提交的检查通过后，用 step_complete_kandev 交接 CI URL、结论和提交。CI 失败时读取日志并留下可复现的修订记录，停在本步骤，随后可回到 Work 并再次经过审查和验收。等待最多 10 分钟，避免重复推送或绕开检查。
+      - name: 已验收
+        position: 8
+        color: bg-green-500
+        allow_manual_move: true
+        complete_task_on_enter: true
+        events: {}
