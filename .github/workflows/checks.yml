@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   check:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,13 +28,16 @@ jobs:
             (.["可执行文件"]["动态依赖"] | any(contains("SwiftUI")))' "$RUNNER_TEMP/research-report/static.json"
           grep -F '主程序加密标记 [0]' "$RUNNER_TEMP/research-report/研究报告.md"
       - name: 运行样本 XCTest
+        timeout-minutes: 8
         run: |
           simulator="$(xcrun simctl list devices available -j | jq -er '
             [.devices | to_entries | sort_by(.key) | reverse | .[] |
              select(.key | contains(".iOS-")) | .value[] | select(.name | startswith("iPhone"))][0].udid')"
+          xcrun simctl bootstatus "$simulator" -b
           xcodebuild test -project fixtures/ResearchCounter.xcodeproj -scheme ResearchCounter \
             -destination "platform=iOS Simulator,id=$simulator" \
-            -derivedDataPath "$RUNNER_TEMP/fixture-derived" -parallel-testing-enabled NO
+            -destination-timeout 120 -derivedDataPath "$RUNNER_TEMP/fixture-derived" \
+            -parallel-testing-enabled NO
       - name: 编译原创 iOS 产品
         run: |
           bash tools/build-ios.sh product simulator "$RUNNER_TEMP/focus-sim"
