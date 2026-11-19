@@ -1,0 +1,5 @@
+[
+  {"id":"O01","behavior":"启动样本显示当前数值 0。","media":["01-start.jpg"]},
+  {"id":"O02","behavior":"点一次「增加一次」后，当前数值从 0 变为 1。","media":["01-start.jpg","02-increment.jpg","04-counter.mp4"]},
+  {"id":"O03","behavior":"点「归零」后，当前数值从 1 回到 0。","media":["02-increment.jpg","03-reset.jpg","04-counter.mp4"]}
+]

@@ -1,0 +1,56 @@
+{
+  "来源文件": "ResearchCounter.ipa",
+  "SHA-256": "94ebb79629d40cf5b816715fd023a05af4c4293666ddb66c792777041637eb6e",
+  "主应用": "Payload/ResearchCounter.app",
+  "配置": {
+    "CFBundleIdentifier": "org.iosresearch.ResearchCounter",
+    "CFBundleDisplayName": "样本计数器",
+    "CFBundleShortVersionString": "1.0",
+    "CFBundleVersion": "1",
+    "MinimumOSVersion": "17.0",
+    "CFBundleSupportedPlatforms": [
+      "iPhoneOS"
+    ],
+    "UIDeviceFamily": [
+      1,
+      2
+    ]
+  },
+  "权限说明键": [],
+  "配置中声明的 URL 类型数": 0,
+  "签名目录": false,
+  "嵌入组件": [],
+  "资源文件计数": {},
+  "资产目录中的单个资源": "未知，未解包资产目录",
+  "第三方 SDK": "组件名称和动态依赖仅为识别线索，静态链接 SDK 未确认",
+  "可执行文件": {
+    "状态": "已读取 Mach-O 加载命令",
+    "加密标记": [
+      0
+    ],
+    "平台标识": [
+      "2"
+    ],
+    "动态依赖": [
+      "/System/Library/Frameworks/Foundation.framework/Foundation",
+      "/System/Library/Frameworks/SwiftUI.framework/SwiftUI",
+      "/System/Library/Frameworks/UIKit.framework/UIKit",
+      "/usr/lib/libSystem.B.dylib",
+      "/usr/lib/swift/libswiftCore.dylib",
+      "/usr/lib/swift/libswiftCoreFoundation.dylib",
+      "/usr/lib/swift/libswiftCoreImage.dylib",
+      "/usr/lib/swift/libswiftDarwin.dylib",
+      "/usr/lib/swift/libswiftDispatch.dylib",
+      "/usr/lib/swift/libswiftMetal.dylib",
+      "/usr/lib/swift/libswiftOSLog.dylib",
+      "/usr/lib/swift/libswiftObjectiveC.dylib",
+      "/usr/lib/swift/libswiftQuartzCore.dylib",
+      "/usr/lib/swift/libswiftSpatial.dylib",
+      "/usr/lib/swift/libswiftUniformTypeIdentifiers.dylib",
+      "/usr/lib/swift/libswiftXPC.dylib",
+      "/usr/lib/swift/libswiftos.dylib",
+      "/usr/lib/swift/libswiftsimd.dylib"
+    ],
+    "实现范围": "客户端函数行为、服务端逻辑和依赖的实际调用情况未验证"
+  }
+}
