@@ -1,10 +1,10 @@
 version: 2
 type: kandev_workflow
 workflows:
-  - name: iOS 原创开发（Gemini）
-    description: 使用独立会话完成规划、实现、审查、验收和 Draft PR。
+  - name: iOS 研究与原创开发（三角色）
+    description: Gemini 负责研究和文档，Claude 负责产品架构与独立审查，Codex 负责实现、验收和 Draft PR。
     steps:
-      - name: Spec
+      - name: Gemini 研究与初版 PRD
         position: 0
         color: bg-sky-500
         is_start_step: true
@@ -20,9 +20,39 @@ workflows:
         prompt: |
           {{task_prompt}}
 
-          读取任务指定的 PRD、开发任务和现有实现。用 mktemp -d 在仓库外创建临时目录，将任务范围、已读代码的位置和验收要求写入 brief.md。运行 /usr/bin/python3 tools/agents.py spec --prd <任务指定的PRD> --tasks <任务指定的开发任务> --brief <临时brief.md> --out <临时目录>。该命令只调用现有 Antigravity，禁止改用其他模型。成功后读取 Gemini实施计划.md，使用 create_task_plan_kandev 保存完整 Gemini 计划。用 step_complete_kandev 交接规划来源及文件范围。规划失败时报告日志并停在本步骤。
-      - name: Work
+          你是本机 Antigravity 的调用和存档操作员，Gemini 是本步骤的文档作者。用 mktemp -d 建仓库外临时目录。运行 /usr/bin/python3 tools/agents.py document --phase initial --input "<研究证据摘要>" --input "<PRD 文件>" --input "<开发任务文件>" --out "<临时目录>"。只有提交时没提供摘要才省略第一项。用 create_task_plan_kandev 保存完整 Gemini-initial.md，并用 step_complete_kandev 交接研究证据、初稿范围和实机未知项。不要在仓库提交研究资料。模型失败时停在该步骤，避免代写。
+      - name: Claude 产品与技术架构
         position: 1
+        color: bg-violet-500
+        allow_manual_move: true
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: *claude
+        profile_session_start_policy: new
+        events:
+          on_enter: *run
+          on_turn_complete: [{type: move_to_step, config: {step_position: 2}}]
+        prompt: |
+          {{task_prompt}}
+
+          以产品和架构负责人在新会话用 get_task_plan_kandev 读取 Gemini 初稿，查看已有实现、测试入口与目标平台。设计首发切片、交互、主应用和未来键盘扩展、共享容器与权限降级、数据模型、AI 或网络边界及测试。遵守开发简报范围。将简体中文原创设计写到任务允许的架构文件。用 update_task_plan_kandev append 追加「Claude 架构决定」及文件位置、验收条件，然后 step_complete_kandev。此步骤不实现代码。
+      - name: Gemini 规格与开发验收
+        position: 2
+        color: bg-sky-600
+        allow_manual_move: true
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: *claude
+        profile_session_start_policy: new
+        events:
+          on_enter: *run
+          on_turn_complete: [{type: move_to_step, config: {step_position: 3}}]
+        prompt: |
+          {{task_prompt}}
+
+          以 Antigravity 调用和存档操作员身份读取 get_task_plan_kandev 的「Claude 架构决定」及仓库内架构文件。用 /usr/bin/python3 tools/agents.py document --phase handoff --input "<架构文件>" --input "<整理好的原创范围或开发任务文件>" --out "<仓库外临时目录>" 交给 Gemini。核对并保存完整 Gemini-handoff.md 为任务允许的 PRD 与验收文档，用 update_task_plan_kandev append 追加「Gemini 开发交接」附文档路径和验收，使用 step_complete_kandev。保留 Gemini 作者与架构来源。此步骤只写原创文档，不提交竞品资料。
+      - name: Codex 开发与测试
+        position: 3
         color: bg-blue-500
         allow_manual_move: true
         wip_limit: 1
@@ -32,28 +62,13 @@ workflows:
         profile_session_start_policy: new
         events:
           on_enter: *run
-          on_turn_complete: [{type: move_to_step, config: {step_position: 2}}]
+          on_turn_complete: [{type: move_to_step, config: {step_position: 4}}]
         prompt: |
           {{task_prompt}}
 
-          从 get_task_plan_kandev 读取并使用已保存的计划。仅在任务的非主分支独立工作树修改指定范围。执行任务验收命令，通过后只暂存任务涉及的文件并提交。提交前检查差异，研究原始资料、媒体和账户信息留在仓库外。用 step_complete_kandev 交接提交哈希和验证结果。此步骤不推送。
-      - name: QA
-        position: 2
-        color: bg-violet-500
-        allow_manual_move: true
-        auto_advance_requires_signal: true
-        complete_task_on_enter: false
-        agent_profile: *codex
-        profile_session_start_policy: new
-        events:
-          on_enter: *run
-          on_turn_complete: [{type: move_to_step, config: {step_position: 3}}]
-        prompt: |
-          {{task_prompt}}
-
-          在同一任务工作树运行 bash tools/check.sh 及任务指定的验收命令，核对当前 HEAD 与 Work 交接提交相符。通过时用 step_complete_kandev 交接实际命令、结果及提交哈希。验收失败时保留日志并停在本步骤。
-      - name: Review
-        position: 3
+          先用 get_task_plan_kandev 读取 Claude 架构和 Gemini 开发交接，再读取两份工作树文档。核对前阶段两个原创文档存在并引用其关键决定。只在独立非主分支工作树实施范围。运行仓库检查、编译及任务验收，修复自己发现的失败。仅暂存并提交任务代码、测试和两个原创文档。调用 step_complete_kandev 交接 HEAD、验证命令与实际结果，注明未实测项。此步骤不推送。
+      - name: Claude 独立审查
+        position: 4
         color: bg-amber-500
         allow_manual_move: true
         auto_advance_requires_signal: true
@@ -62,13 +77,13 @@ workflows:
         profile_session_start_policy: new
         events:
           on_enter: *run
-          on_turn_complete: [{type: move_to_step, config: {step_position: 4}}]
+          on_turn_complete: [{type: move_to_step, config: {step_position: 5}}]
         prompt: |
           {{task_prompt}}
 
-          用 get_task_plan_kandev 读取共享计划。独立审查相对指定基线的差异。只写可复现的问题、位置、影响及验收方法。用 update_task_plan_kandev 的 append 模式追加「独立审查」段，结论明确为「通过」或「需修复」，列出哪些内容必须修正。保存成功后用 step_complete_kandev 交接结论与被审提交。此阶段只读代码；不得直接改源码或推送。
-      - name: Fix
-        position: 4
+          以独立审查负责人用 get_task_plan_kandev 和仓库架构、PRD、实际基线差异与验收结果审查本次提交。优先验证输入与粘贴板边界、编译与 UI 测试的真实性。用 update_task_plan_kandev append 追加「Claude 独立审查」，明确通过或需修复、实际复现、位置、影响与验收方法。发现问题由 Codex 修改；未发现则如实记录。这一步只读代码。用 step_complete_kandev 交接提交和结论。
+      - name: Codex 反馈修复与复测
+        position: 5
         color: bg-orange-500
         allow_manual_move: true
         auto_advance_requires_signal: true
@@ -77,13 +92,13 @@ workflows:
         profile_session_start_policy: new
         events:
           on_enter: *run
-          on_turn_complete: [{type: move_to_step, config: {step_position: 5}}]
+          on_turn_complete: [{type: move_to_step, config: {step_position: 6}}]
         prompt: |
           {{task_prompt}}
 
-          用 get_task_plan_kandev 读取 Review 保存的「独立审查」结论。需要修复时仅处理该段可复现的发现，运行 bash tools/check.sh 和相应验收，再提交任务范围内的修复。审查已通过时保持原提交。此环节最多一次修复轮次；失败则保留日志停在本步骤。成功时用 step_complete_kandev 交接所读反馈、修复结果、测试及当前提交。
-      - name: Verify
-        position: 5
+          用 get_task_plan_kandev 读取「Claude 独立审查」。有可复现问题则实施一轮修复，运行针对性测试和仓库检查，提交任务内范围；通过则保留原提交。用 update_task_plan_kandev append 保存「Codex 修复与验证」及精确 HEAD、实际测试、未验证项。验收通过用 step_complete_kandev。失败停在此处。
+      - name: Claude 复核
+        position: 6
         color: bg-yellow-500
         allow_manual_move: true
         auto_advance_requires_signal: true
@@ -92,13 +107,28 @@ workflows:
         profile_session_start_policy: new
         events:
           on_enter: *run
-          on_turn_complete: [{type: move_to_step, config: {step_position: 6}}]
+          on_turn_complete: [{type: move_to_step, config: {step_position: 7}}]
         prompt: |
           {{task_prompt}}
 
-          用 get_task_plan_kandev 读取独立审查结论，依 Fix 交接核对修订和测试结果。若发现尚未解决，留下位置和复现方式，停在本步骤，不再自动重试。满足验收时用 step_complete_kandev 交接通过的准确提交。此阶段只读代码。
-      - name: Draft PR
-        position: 6
+          只读核对原审查意见、修复记录、实际差异与测试。无代码变更时只核对原审查与 HEAD。有阻断问题则留证并停下。通过则用 step_complete_kandev 交接复核通过的精确提交与结果。
+      - name: Gemini 最终文档
+        position: 7
+        color: bg-sky-700
+        allow_manual_move: true
+        auto_advance_requires_signal: true
+        complete_task_on_enter: false
+        agent_profile: *claude
+        profile_session_start_policy: new
+        events:
+          on_enter: *run
+          on_turn_complete: [{type: move_to_step, config: {step_position: 8}}]
+        prompt: |
+          {{task_prompt}}
+
+          用 get_task_plan_kandev 读修复与验证，核对通过的 HEAD，汇总实际代码、运行命令和测试到仓库外文本。运行 /usr/bin/python3 tools/agents.py document --phase final --input "<真实交付摘要>" --input "<原架构或 PRD>" --out "<临时目录>"。只把 Gemini-final.md 更新至任务允许的原创最终文档，核对内容与代码一致。提交严格限 Markdown 文档。用 step_complete_kandev 交接复核的代码提交、文档提交及测试状态。
+      - name: 原生 Draft PR
+        position: 8
         color: bg-indigo-500
         allow_manual_move: true
         auto_advance_requires_signal: true
@@ -107,13 +137,13 @@ workflows:
         profile_session_start_policy: new
         events:
           on_enter: *run
-          on_turn_complete: [{type: move_to_step, config: {step_position: 7}}]
+          on_turn_complete: [{type: move_to_step, config: {step_position: 9}}]
         prompt: |
           {{task_prompt}}
 
-          本步骤只向 cbp0522/lianaihenmang-rea 发布 Draft PR。先确认 origin 指向该仓库、工作树干净、当前分支不是 main 或 master，Verify 交接中的哈希等于 HEAD，基线与任务明确授权的目标分支一致。仅推送当前非主分支。HTTPS 可用 git -c 'credential.helper=!gh auth git-credential' push 推送。优先复用同一 head 和 base 的现有 Draft PR。使用 gh pr create --draft 显式指定仓库、head 和 base。说明中文变更范围和验收结果。核对 GitHub 返回 isDraft=true 及准确 HEAD，用 step_complete_kandev 交接 PR URL、编号和哈希。不得合并、发布或修改仓库设置。
+          只向 cbp0522/lianaihenmang-rea 发布。核对独立工作树干净、分支非主分支、HEAD 为 Gemini 文档提交、从 Claude 复核的代码提交到 HEAD 只有任务范围 Markdown。核对授权目标基线。Git HTTPS 可用 git -c 'credential.helper=!gh auth git-credential' push。显式 gh pr create --draft 指定仓库、来源和目标基线，必要时复用已有 Draft。核对 isDraft 和 headRefOid 后立刻 step_complete_kandev 交接 URL 和 SHA，让下阶段核对 CI。没有自动合并和生产发布。
       - name: CI
-        position: 7
+        position: 9
         color: bg-cyan-500
         allow_manual_move: true
         auto_advance_requires_signal: true
@@ -122,13 +152,13 @@ workflows:
         profile_session_start_policy: new
         events:
           on_enter: *run
-          on_turn_complete: [{type: move_to_step, config: {step_position: 8}}]
+          on_turn_complete: [{type: move_to_step, config: {step_position: 10}}]
         prompt: |
           {{task_prompt}}
 
-          根据 Draft PR 交接用 gh 检查目标 PR 的最新 HEAD 以及该提交的全部 CI 检查，至少包含 check。若 CI 尚未注册，等待并重查。仅在对应提交的检查通过后，用 step_complete_kandev 交接 CI URL、结论和提交。CI 失败时读取日志并留下可复现的修订记录，停在本步骤，随后可回到 Work 并再次经过审查和验收。等待最多 10 分钟，避免重复推送或绕开检查。
-      - name: 已验收
-        position: 8
+          核对刚创建的 Draft PR、当前 HEAD 和对应的 GitHub Actions 结果。允许等待最多 15 分钟；检查尚未登记时稍后重查。完整成功后 step_complete_kandev 交接流水线链接、提交哈希和已验证检查。若失败，读取真实日志并留下失败步骤和可复现原因，停在本步骤。不得合并和发布。
+      - name: 已验收，等人工决定
+        position: 10
         color: bg-green-500
         allow_manual_move: true
         complete_task_on_enter: true
