@@ -16,3 +16,6 @@ git diff --check
 if [[ -f product/check.sh ]]; then
   bash product/check.sh
 fi
+if [[ -f apps/ReplyWorkbench/check.sh ]]; then
+  bash apps/ReplyWorkbench/check.sh
+fi

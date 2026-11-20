@@ -38,6 +38,14 @@ jobs:
             -destination "platform=iOS Simulator,id=$simulator" \
             -destination-timeout 120 -derivedDataPath "$RUNNER_TEMP/fixture-derived" \
             -parallel-testing-enabled NO
+          echo "IOS_SIMULATOR_UDID=$simulator" >> "$GITHUB_ENV"
+      - name: 运行回应练习台 XCTest
+        timeout-minutes: 8
+        run: |
+          xcodebuild test -project apps/ReplyWorkbench/ReplyWorkbench.xcodeproj -scheme ReplyWorkbench \
+            -destination "platform=iOS Simulator,id=$IOS_SIMULATOR_UDID" \
+            -destination-timeout 120 -derivedDataPath "$RUNNER_TEMP/reply-workbench-derived" \
+            -parallel-testing-enabled NO
       - name: 编译原创 iOS 产品
         run: |
           bash tools/build-ios.sh product simulator "$RUNNER_TEMP/focus-sim"

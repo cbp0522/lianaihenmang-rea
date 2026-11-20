@@ -49,6 +49,7 @@ Gemini 写研究与初版 PRD，Claude 在新会话给出产品和架构设计�
 ```bash
 bash tools/check.sh
 bash tools/build-ios.sh fixture device "$HOME/app-research/验收样本/fixture-device"
+xcodebuild test -project apps/ReplyWorkbench/ReplyWorkbench.xcodeproj -scheme ReplyWorkbench -destination 'platform=iOS Simulator,name=iPhone 16e' -parallel-testing-enabled NO
 ```
 
-GitHub Actions 使用 macOS 编译真实 arm64 Mach-O 测试包，运行研究器、样本 XCTest 和原创产品编译。[系统架构与部署](docs/系统架构.md) · [自制样本报告](docs/验收样本/研究报告.md)
+GitHub Actions 使用 macOS 编译真实 arm64 Mach-O 测试包，运行研究器，顺序执行样本计数器和回应练习台的 XCTest，并编译节奏记录。[系统架构与部署](docs/系统架构.md) · [自制样本报告](docs/验收样本/研究报告.md) · [回应练习台架构](docs/原创/回应练习台-架构.md) · [回应练习台 PRD 与验收](docs/原创/回应练习台-PRD与验收.md)
