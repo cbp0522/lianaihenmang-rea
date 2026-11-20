@@ -12,3 +12,5 @@ __pycache__/
 *.mov
 *.mp4
 report/
+# Antigravity ACP 在独立工作树中生成的系统技能
+/skills/system/run-workflow/SKILL.md
