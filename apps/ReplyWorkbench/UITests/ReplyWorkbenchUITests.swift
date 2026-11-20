@@ -14,7 +14,8 @@ final class ReplyWorkbenchUITests: XCTestCase {
         XCTAssertFalse(copy.isEnabled)
         attachScreenshot("未选择意图")
 
-        app.buttons["intent.soften"].tap()
+        let soften = app.buttons["intent.soften"]
+        soften.tap()
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         let template = editor.value as? String ?? ""
         XCTAssertFalse(template.isEmpty)
@@ -43,19 +44,27 @@ final class ReplyWorkbenchUITests: XCTestCase {
         attachScreenshot("替换确认")
 
         keep.tap()
+        XCTAssertTrue(keep.waitForNonExistence(timeout: 5))
+        let keptDraft = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", edited), object: editor)
+        let softenSelected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "selected == YES"), object: soften)
+        XCTAssertEqual(XCTWaiter.wait(for: [keptDraft, softenSelected], timeout: 5), .completed)
         XCTAssertEqual(editor.value as? String, edited)
-        XCTAssertTrue(app.buttons["intent.soften"].isSelected)
+        XCTAssertTrue(soften.isSelected)
         attachScreenshot("保留草稿")
 
         decline.tap()
         let replace = app.buttons["替换为新模板"]
         XCTAssertTrue(replace.waitForExistence(timeout: 5))
         replace.tap()
+        XCTAssertTrue(replace.waitForNonExistence(timeout: 5))
+        let declineSelected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "selected == YES"), object: decline)
+        let replacedDraft = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != nil AND value != '' AND value != %@", edited), object: editor)
+        XCTAssertEqual(XCTWaiter.wait(for: [declineSelected, replacedDraft], timeout: 5), .completed)
         XCTAssertTrue(decline.isSelected)
         let replacement = editor.value as? String ?? ""
         XCTAssertFalse(replacement.isEmpty)
         XCTAssertNotEqual(replacement, edited)
-        XCTAssertFalse(app.staticTexts["copyStatus"].exists)
+        XCTAssertTrue(app.staticTexts["copyStatus"].waitForNonExistence(timeout: 5))
 
         focusAtEnd(of: editor)
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: replacement.count))
@@ -71,7 +80,6 @@ final class ReplyWorkbenchUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["emptyStateHint"].exists)
         XCTAssertFalse(editor.exists)
 
-        let soften = app.buttons["intent.soften"]
         XCTAssertEqual(decline.frame.minX, soften.frame.minX, accuracy: 1)
         XCTAssertLessThanOrEqual(decline.frame.maxY, soften.frame.minY)
         attachScreenshot("辅助功能大字号单列")
