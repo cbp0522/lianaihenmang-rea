@@ -8,7 +8,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-COMMAND = ["agy", "--mode", "plan", "--sandbox", "--print-timeout", "120s",
+COMMAND = ["agy", "--mode", "plan", "--sandbox", "--print-timeout", "240s",
            "--input-format", "stream-json", "--output-format", "stream-json"]
 GOOGLE_API_ENV = {"GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_APPLICATION_CREDENTIALS",
                   "GOOGLE_GENAI_USE_VERTEXAI", "GOOGLE_GENAI_USE_GCA"}
@@ -45,9 +45,10 @@ def antigravity(prompt, output):
     with tempfile.TemporaryDirectory(prefix="ios-research-agent-") as temporary:
         with log_path.open("w", encoding="utf-8") as log:
             result = subprocess.run(COMMAND, input=wire, text=True, stdout=subprocess.PIPE,
-                                    stderr=log, cwd=temporary, env=env, timeout=150)
-    if result.returncode:
-        raise RuntimeError(f"Antigravity 退出码 {result.returncode}，日志 {log_path}")
+                                    stderr=log, cwd=temporary, env=env, timeout=270)
+    # 输出超时仍可能以退出码 0 返回部分 Markdown，同时在标准错误报告失败。
+    if result.returncode or any(line.startswith("AGY_ERROR:") for line in text(log_path).splitlines()):
+        raise RuntimeError(f"Antigravity 未完整结束（退出码 {result.returncode}），日志 {log_path}")
     try:
         events = (json.loads(line) for line in result.stdout.splitlines() if line.strip())
         reply = next(event["result"] for event in events if event.get("event") == "result")
