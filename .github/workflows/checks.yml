@@ -18,6 +18,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: 验证 Slack 入口与原生工作流合同
+        run: node --test tools/slack-intake/*.test.mjs
       - run: bash tools/check.sh
       - name: 验证真实 arm64 Mach-O IPA
         run: |

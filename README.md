@@ -56,3 +56,7 @@ bash tools/build-ios.sh fixture device "$HOME/app-research/验收样本/fixture-
 ```
 
 GitHub Actions 使用 macOS 编译真实 arm64 Mach-O 测试包，运行研究器、样本 XCTest 和原创产品编译。[系统架构与部署](docs/系统架构.md) · [自制样本报告](docs/验收样本/研究报告.md)
+
+## Slack 私聊入口
+
+Mac 上可使用现有 Claude Code 登录和 Slack Socket Mode 把授权私聊转为轻量、标准、深度或仅研究的 Kandev 原生任务。详情见 [Slack App 安装、验收与 Mac 恢复](docs/Slack入口与Mac恢复.md)。
