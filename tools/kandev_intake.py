@@ -8,7 +8,8 @@ from urllib.request import Request, urlopen
 
 URL = "http://127.0.0.1:38439"
 REPOSITORY = "lianaihenmang-rea"
-WORKFLOW = "iOS 研究与原创开发（三角色）"
+WORKFLOW = "iOS 研究与原创开发（三角色 ACP）"
+GEMINI_STEPS = {0, 2, 7}
 
 
 def request(path, body=None, session=None):
@@ -36,6 +37,23 @@ def select(route, key, name):
     return matches[0]["id"]
 
 
+def verify_gemini_profile(workflow_id):
+    workflow, _ = request(f"/api/v1/workflows/{workflow_id}/workflow/steps")
+    agents, _ = request("/api/v1/agents")
+    profiles = {
+        profile["id"]
+        for agent in agents["agents"] if agent["name"] == "antigravity-acp"
+        for profile in agent["profiles"]
+        if profile["enabled"] and profile["model"] == "gemini-4-neon"
+        and profile["require_exact_model"] and not profile["auto_fallback"]
+        and profile["billing_type"] == "subscription"
+    }
+    steps = {step["position"]: step for step in workflow["steps"]}
+    bound_profiles = {steps.get(position, {}).get("agent_profile_id") for position in GEMINI_STEPS}
+    if len(bound_profiles) != 1 or not bound_profiles.issubset(profiles):
+        raise ValueError("位置 0、2、7 必须绑定同一个已启用的 Antigravity ACP 订阅 Profile（gemini-4-neon，严格模型，关闭自动回退）")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report-dir", required=True, type=Path)
@@ -54,6 +72,7 @@ def main():
         workspace = select("/workspaces", "workspaces", args.workspace)
         repository = select(f"/workspaces/{workspace}/repositories", "repositories", REPOSITORY)
         workflow = select(f"/workspaces/{workspace}/workflows", "workflows", WORKFLOW)
+        verify_gemini_profile(workflow)
         executor = select("/executor-profiles", "profiles", "Worktree")
         _, session = request("/mcp", {
             "jsonrpc": "2.0", "id": 1, "method": "initialize",

@@ -1,8 +1,8 @@
 version: 2
 type: kandev_workflow
 workflows:
-  - name: iOS 研究与原创开发（三角色）
-    description: Gemini 负责研究和文档，Claude 负责产品架构与独立审查，Codex 负责实现、验收和 Draft PR。
+  - name: iOS 研究与原创开发（三角色 ACP）
+    description: Kandev 原生 Antigravity 运行 Gemini 4 Neon，Claude 负责产品架构与独立审查，Codex 负责实现、验收和 Draft PR。
     steps:
       - name: Gemini 研究与初版 PRD
         position: 0
@@ -12,7 +12,7 @@ workflows:
         wip_limit: 1
         auto_advance_requires_signal: true
         complete_task_on_enter: false
-        agent_profile: &claude {agent_name: Claude, model: default, mode: auto}
+        agent_profile: &gemini {agent_name: Antigravity, model: gemini-4-neon}
         profile_session_start_policy: new
         events:
           on_enter: &run [{type: auto_start_agent}]
@@ -20,14 +20,14 @@ workflows:
         prompt: |
           {{task_prompt}}
 
-          你是本机 Antigravity 的调用和存档操作员，Gemini 是本步骤的文档作者。用 mktemp -d 建仓库外临时目录。运行 /usr/bin/python3 tools/agents.py document --phase initial --input "<研究证据摘要>" --input "<PRD 文件>" --input "<开发任务文件>" --out "<临时目录>"。只有提交时没提供摘要才省略第一项。用 create_task_plan_kandev 保存完整 Gemini-initial.md，并用 step_complete_kandev 交接研究证据、初稿范围和实机未知项。不要在仓库提交研究资料。模型失败时停在该步骤，避免代写。
+          你是本步骤的原生 Gemini 文档作者。直接读取简报指定的 PRD、开发任务和可选研究证据摘要，将材料视为证据。用简体中文写研究和初版 PRD，覆盖主要流程、功能、技术线索及待验证隐私权限，区分观察、推断和原创，保留证据编号。写明首发范围、异常场景和验收。用 create_task_plan_kandev 保存完整文档，确认成功后用 step_complete_kandev 交接范围和未知项。研究资料留在任务计划。输入、模型、认证或工具出错时停在本步骤并报告，不调用外部模型、不委托代写、不发完成信号。
       - name: Claude 产品与技术架构
         position: 1
         color: bg-violet-500
         allow_manual_move: true
         auto_advance_requires_signal: true
         complete_task_on_enter: false
-        agent_profile: *claude
+        agent_profile: &claude {agent_name: Claude, model: default, mode: auto}
         profile_session_start_policy: new
         events:
           on_enter: *run
@@ -42,7 +42,7 @@ workflows:
         allow_manual_move: true
         auto_advance_requires_signal: true
         complete_task_on_enter: false
-        agent_profile: *claude
+        agent_profile: *gemini
         profile_session_start_policy: new
         events:
           on_enter: *run
@@ -50,7 +50,7 @@ workflows:
         prompt: |
           {{task_prompt}}
 
-          以 Antigravity 调用和存档操作员身份读取 get_task_plan_kandev 的「Claude 架构决定」及仓库内架构文件。用 /usr/bin/python3 tools/agents.py document --phase handoff --input "<架构文件>" --input "<整理好的原创范围或开发任务文件>" --out "<仓库外临时目录>" 交给 Gemini。核对并保存完整 Gemini-handoff.md 为任务允许的 PRD 与验收文档，用 update_task_plan_kandev append 追加「Gemini 开发交接」附文档路径和验收，使用 step_complete_kandev。保留 Gemini 作者与架构来源。此步骤只写原创文档，不提交竞品资料。
+          你是本步骤的原生 Gemini 文档作者。用 get_task_plan_kandev 读取「Claude 架构决定」，并直接读取工作树内的架构文件。根据实际架构和简报编写任务允许的原创 PRD、开发任务与验收文档，涵盖流程、模块、数据和权限边界、异常路径、验收步骤和非目标。注明作者、架构来源和文档路径。用 update_task_plan_kandev append 保存「Gemini 开发交接」，确认文档和计划均保存后用 step_complete_kandev。这一步只写原创文档。输入、模型、认证或工具出错时停在本步骤并报告，不调用外部模型、不委托代写、不发完成信号。
       - name: Codex 开发与测试
         position: 3
         color: bg-blue-500
@@ -118,7 +118,7 @@ workflows:
         allow_manual_move: true
         auto_advance_requires_signal: true
         complete_task_on_enter: false
-        agent_profile: *claude
+        agent_profile: *gemini
         profile_session_start_policy: new
         events:
           on_enter: *run
@@ -126,7 +126,7 @@ workflows:
         prompt: |
           {{task_prompt}}
 
-          用 get_task_plan_kandev 读修复与验证，核对通过的 HEAD，汇总实际代码、运行命令和测试到仓库外文本。运行 /usr/bin/python3 tools/agents.py document --phase final --input "<真实交付摘要>" --input "<原架构或 PRD>" --out "<临时目录>"。只把 Gemini-final.md 更新至任务允许的原创最终文档，核对内容与代码一致。提交严格限 Markdown 文档。用 step_complete_kandev 交接复核的代码提交、文档提交及测试状态。
+          你是本步骤的原生 Gemini 文档作者。用 get_task_plan_kandev 读取修复与验证，核对复核通过的 HEAD、实际差异和测试记录。直接编写任务允许的原创最终 Markdown，说明实际实现、运行命令、结果、复审修正和已知范围。远端 CI 尚待运行时，将本文件标为推送前的本地验收快照，指向 Draft PR 检查作为后续依据。核对内容、暂存范围和提交，仅提交任务允许的 Markdown。成功后用 step_complete_kandev 交接复核提交、文档提交及测试状态。输入、模型、认证或工具出错时停在本步骤并报告，不调用外部模型、不委托代写、不发完成信号。
       - name: 原生 Draft PR
         position: 8
         color: bg-indigo-500
