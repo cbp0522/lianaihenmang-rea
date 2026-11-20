@@ -42,7 +42,7 @@ case_dir=~/app-research/新样本
   --base research/architecture-v2 --external-id '唯一任务编号'
 ```
 
-Kandev 在独立工作树内保存 Gemini 计划并交给 Codex。QA 运行仓库和任务测试。Claude 把独立审查写入计划，Codex 最多处理一轮，Claude 随后复核。验收通过后提交 Draft PR，并按精确 HEAD 查询 CI。看板记录各步骤会话、交接和错误。人工决定是否合并。
+Gemini 写研究与初版 PRD，Claude 在新会话给出产品和架构设计，Gemini 再整理开发规格。Codex 从原生计划和工作树文档读取决定并实施、测试。Claude 在独立会话审查，Codex 处理一轮问题，Claude 复核。Gemini 根据实际代码和测试更新最终文档。Kandev 通过原生步骤创建 Draft PR 并按精确 HEAD 查询 CI，人工决定是否合并。准备好可分享的静态证据摘要时，可传 `--evidence`。未经审查的原始研究材料留在仓库之外。
 
 ## 验收入口
 

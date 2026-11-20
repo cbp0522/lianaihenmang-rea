@@ -8,7 +8,7 @@ from urllib.request import Request, urlopen
 
 URL = "http://127.0.0.1:38439"
 REPOSITORY = "lianaihenmang-rea"
-WORKFLOW = "iOS 原创开发（Gemini）"
+WORKFLOW = "iOS 研究与原创开发（三角色）"
 
 
 def request(path, body=None, session=None):
@@ -40,6 +40,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report-dir", required=True, type=Path)
     parser.add_argument("--brief", required=True, type=Path, help="已核对的任务范围和验收")
+    parser.add_argument("--evidence", type=Path, help="已核对、可以提交给 Agent 的研究摘要")
     parser.add_argument("--title", required=True)
     parser.add_argument("--base", required=True, help="已推送的开发基线")
     parser.add_argument("--external-id", required=True, help="同一任务重试使用同一个编号")
@@ -48,6 +49,7 @@ def main():
     try:
         prd = (args.report_dir / "PRD.md").resolve(strict=True)
         tasks = (args.report_dir / "开发任务.md").resolve(strict=True)
+        evidence = args.evidence.resolve(strict=True) if args.evidence else None
         brief = args.brief.read_text(encoding="utf-8")
         workspace = select("/workspaces", "workspaces", args.workspace)
         repository = select(f"/workspaces/{workspace}/repositories", "repositories", REPOSITORY)
@@ -68,7 +70,9 @@ def main():
                 "workflow_id": workflow, "executor_profile_id": executor,
                 "base_branch": args.base, "start_agent": True, "external_id": args.external_id,
                 "prompt": (f"PRD 文件路径为 {prd}\n开发任务文件路径为 {tasks}\n"
-                           f"Draft PR 目标基线为 {args.base}\n\n{brief}"),
+                           f"Draft PR 目标基线为 {args.base}\n"
+                           + (f"研究证据摘要路径为 {evidence}\n" if evidence else "")
+                           + f"\n{brief}"),
             }},
         }, session)
         data = result["result"]
