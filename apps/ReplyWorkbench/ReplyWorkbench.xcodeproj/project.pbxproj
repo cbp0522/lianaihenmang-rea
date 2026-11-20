@@ -1,0 +1,466 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		000000000000000000000078 /* ReplyIntent.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000064 /* ReplyIntent.swift */;
+		};
+		000000000000000000000079 /* ReplyTemplates.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000065 /* ReplyTemplates.swift */;
+		};
+		00000000000000000000007A /* DraftSession.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000066 /* DraftSession.swift */;
+		};
+		00000000000000000000007B /* ClipboardWriting.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000067 /* ClipboardWriting.swift */;
+		};
+		00000000000000000000007C /* ReplyWorkbenchApp.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000068 /* ReplyWorkbenchApp.swift */;
+		};
+		00000000000000000000007D /* WorkbenchModel.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000069 /* WorkbenchModel.swift */;
+		};
+		00000000000000000000007E /* WorkbenchView.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 00000000000000000000006A /* WorkbenchView.swift */;
+		};
+		00000000000000000000007F /* SystemClipboardWriter.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 00000000000000000000006B /* SystemClipboardWriter.swift */;
+		};
+		000000000000000000000080 /* DraftSessionTests.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 00000000000000000000006C /* DraftSessionTests.swift */;
+		};
+		000000000000000000000081 /* ReplyWorkbenchUITests.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 00000000000000000000006D /* ReplyWorkbenchUITests.swift */;
+		};
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		000000000000000000000042 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 00000000000000000000000A;
+			remoteInfo = ReplyWorkbench;
+		};
+		000000000000000000000043 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 00000000000000000000000A;
+			remoteInfo = ReplyWorkbench;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000064 /* ReplyIntent.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = ReplyIntent.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000065 /* ReplyTemplates.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = ReplyTemplates.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000066 /* DraftSession.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = DraftSession.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000067 /* ClipboardWriting.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = ClipboardWriting.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000068 /* ReplyWorkbenchApp.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = ReplyWorkbenchApp.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000069 /* WorkbenchModel.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = WorkbenchModel.swift;
+			sourceTree = "<group>";
+		};
+		00000000000000000000006A /* WorkbenchView.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = WorkbenchView.swift;
+			sourceTree = "<group>";
+		};
+		00000000000000000000006B /* SystemClipboardWriter.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = SystemClipboardWriter.swift;
+			sourceTree = "<group>";
+		};
+		00000000000000000000006C /* DraftSessionTests.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = DraftSessionTests.swift;
+			sourceTree = "<group>";
+		};
+		00000000000000000000006D /* ReplyWorkbenchUITests.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = ReplyWorkbenchUITests.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000014 /* ReplyWorkbench.app */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.application;
+			includeInIndex = 0;
+			path = ReplyWorkbench.app;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		000000000000000000000015 /* ReplyWorkbenchTests.xctest */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.cfbundle;
+			includeInIndex = 0;
+			path = ReplyWorkbenchTests.xctest;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		000000000000000000000016 /* ReplyWorkbenchUITests.xctest */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.cfbundle;
+			includeInIndex = 0;
+			path = ReplyWorkbenchUITests.xctest;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		000000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000032 /* Core */,
+				000000000000000000000033 /* App */,
+				000000000000000000000034 /* Tests */,
+				000000000000000000000035 /* UITests */,
+				000000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		000000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000014 /* ReplyWorkbench.app */,
+				000000000000000000000015 /* ReplyWorkbenchTests.xctest */,
+				000000000000000000000016 /* ReplyWorkbenchUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		000000000000000000000032 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000064 /* ReplyIntent.swift */,
+				000000000000000000000065 /* ReplyTemplates.swift */,
+				000000000000000000000066 /* DraftSession.swift */,
+				000000000000000000000067 /* ClipboardWriting.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		000000000000000000000033 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000068 /* ReplyWorkbenchApp.swift */,
+				000000000000000000000069 /* WorkbenchModel.swift */,
+				00000000000000000000006A /* WorkbenchView.swift */,
+				00000000000000000000006B /* SystemClipboardWriter.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		000000000000000000000034 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000006C /* DraftSessionTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		000000000000000000000035 /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				00000000000000000000006D /* ReplyWorkbenchUITests.swift */,
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		00000000000000000000000A /* ReplyWorkbench */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000028 /* Build configuration list for ReplyWorkbench */;
+			buildPhases = (
+				00000000000000000000001E /* Sources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = ReplyWorkbench;
+			productName = ReplyWorkbench;
+			productReference = 000000000000000000000014 /* ReplyWorkbench.app */;
+			productType = "com.apple.product-type.application";
+		};
+		00000000000000000000000B /* ReplyWorkbenchTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000029 /* Build configuration list for ReplyWorkbenchTests */;
+			buildPhases = (
+				00000000000000000000001F /* Sources */,
+			);
+			buildRules = ();
+			dependencies = (
+				00000000000000000000003D /* PBXTargetDependency */,
+			);
+			name = ReplyWorkbenchTests;
+			productName = ReplyWorkbenchTests;
+			productReference = 000000000000000000000015 /* ReplyWorkbenchTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		00000000000000000000000C /* ReplyWorkbenchUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00000000000000000000002A /* Build configuration list for ReplyWorkbenchUITests */;
+			buildPhases = (
+				000000000000000000000020 /* Sources */,
+			);
+			buildRules = ();
+			dependencies = (
+				00000000000000000000003E /* PBXTargetDependency */,
+			);
+			name = ReplyWorkbenchUITests;
+			productName = ReplyWorkbenchUITests;
+			productReference = 000000000000000000000016 /* ReplyWorkbenchUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		000000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					00000000000000000000000A = {CreatedOnToolsVersion = 26.2;};
+					00000000000000000000000B = {CreatedOnToolsVersion = 26.2; TestTargetID = 00000000000000000000000A;};
+					00000000000000000000000C = {CreatedOnToolsVersion = 26.2; TestTargetID = 00000000000000000000000A;};
+				};
+			};
+			buildConfigurationList = 000000000000000000000027 /* Build configuration list for project */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = "zh-Hans";
+			hasScannedForEncodings = 0;
+			knownRegions = ("zh-Hans", Base);
+			mainGroup = 000000000000000000000002;
+			productRefGroup = 000000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				00000000000000000000000A /* ReplyWorkbench */,
+				00000000000000000000000B /* ReplyWorkbenchTests */,
+				00000000000000000000000C /* ReplyWorkbenchUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		00000000000000000000001E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000078 /* ReplyIntent.swift in Sources */,
+				000000000000000000000079 /* ReplyTemplates.swift in Sources */,
+				00000000000000000000007A /* DraftSession.swift in Sources */,
+				00000000000000000000007B /* ClipboardWriting.swift in Sources */,
+				00000000000000000000007C /* ReplyWorkbenchApp.swift in Sources */,
+				00000000000000000000007D /* WorkbenchModel.swift in Sources */,
+				00000000000000000000007E /* WorkbenchView.swift in Sources */,
+				00000000000000000000007F /* SystemClipboardWriter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		00000000000000000000001F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000080 /* DraftSessionTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000020 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000081 /* ReplyWorkbenchUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		00000000000000000000003D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 00000000000000000000000A /* ReplyWorkbench */;
+			targetProxy = 000000000000000000000042 /* PBXContainerItemProxy */;
+		};
+		00000000000000000000003E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 00000000000000000000000A /* ReplyWorkbench */;
+			targetProxy = 000000000000000000000043 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		000000000000000000000050 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		000000000000000000000051 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		000000000000000000000052 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_CFBundleDisplayName = "回应练习台";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.iosresearch.ReplyWorkbench;
+			};
+			name = Debug;
+		};
+		000000000000000000000053 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_CFBundleDisplayName = "回应练习台";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.iosresearch.ReplyWorkbench;
+			};
+			name = Release;
+		};
+		000000000000000000000054 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				PRODUCT_BUNDLE_IDENTIFIER = org.iosresearch.ReplyWorkbenchTests;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ReplyWorkbench.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ReplyWorkbench";
+			};
+			name = Debug;
+		};
+		000000000000000000000055 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				PRODUCT_BUNDLE_IDENTIFIER = org.iosresearch.ReplyWorkbenchTests;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ReplyWorkbench.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ReplyWorkbench";
+			};
+			name = Release;
+		};
+		000000000000000000000056 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = org.iosresearch.ReplyWorkbenchUITests;
+				TEST_TARGET_NAME = ReplyWorkbench;
+			};
+			name = Debug;
+		};
+		000000000000000000000057 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_BUNDLE_IDENTIFIER = org.iosresearch.ReplyWorkbenchUITests;
+				TEST_TARGET_NAME = ReplyWorkbench;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		000000000000000000000027 /* Build configuration list for project */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000050 /* Debug */,
+				000000000000000000000051 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		000000000000000000000028 /* Build configuration list for ReplyWorkbench */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000052 /* Debug */,
+				000000000000000000000053 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		000000000000000000000029 /* Build configuration list for ReplyWorkbenchTests */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000054 /* Debug */,
+				000000000000000000000055 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		00000000000000000000002A /* Build configuration list for ReplyWorkbenchUITests */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000056 /* Debug */,
+				000000000000000000000057 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 000000000000000000000001 /* Project object */;
+}
