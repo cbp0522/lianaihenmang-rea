@@ -38,12 +38,12 @@ case_dir=~/app-research/新样本
 
 ## 提交一次，自动执行
 
-在 `brief.md` 写本次实现范围和验收要求。选择已有远端开发基线，确保其中包含本次工作流需要的辅助工具。一次提交即可启动任务，重试同一提交时复用 `--external-id`。
+在 `brief.md` 写本次实现范围和验收要求。选择包含 ACP 迁移配置的远端开发基线，其中的 `.gitignore` 排除 ACP 自动生成的系统技能文件。一次提交即可启动任务，重试同一提交时复用 `--external-id`。
 
 ```bash
 /usr/bin/python3 tools/kandev_intake.py --report-dir "$case_dir/report" \
   --brief "$case_dir/brief.md" --title '本次开发任务' \
-  --base research/role-workflow --external-id '唯一任务编号'
+  --base research/kandev-native-antigravity --external-id '唯一任务编号'
 ```
 
 Gemini 在原生 Antigravity ACP 会话中写研究与初版 PRD，Claude 在新会话给出产品和架构设计，Gemini 再整理开发规格。Codex 从原生计划和工作树文档读取决定并实施、测试。Claude 在独立会话审查，Codex 处理一轮问题，Claude 复核。Gemini 根据实际代码和测试更新最终文档。Kandev 通过原生步骤创建 Draft PR 并按精确 HEAD 查询 CI，人工决定是否合并。准备好可分享的静态证据摘要时，可传 `--evidence`。未经审查的原始研究材料留在仓库之外。
