@@ -13,6 +13,8 @@
 
 当前安装使用 Kandev 0.102.0，复用现有的 Codex、Claude 和 Antigravity 登录。Kandev 仅监听回环。已有用户服务在当前登录会话后台运行。若新会话尚未加载，可执行 `launchctl bootstrap gui/$(id -u) ~/ai-dev-infra/local.ios-research.kandev.plist`。前台运行用 `bash infra/start-kandev.sh`，新安装的固定版本命令为 `npm install --prefix ~/ai-dev-infra/kandev kandev@0.102.0`。工作流由 `infra/kandev/ios-development.yml` 导入，核对 Claude 与 Codex 的本机配置。
 
+无人值守执行期间需要保持 Mac 唤醒。可用 `caffeinate -i -t 3600` 临时维持一小时唤醒，命令结束后自动解除。
+
 ## 研究与生成 PRD
 
 ```bash
