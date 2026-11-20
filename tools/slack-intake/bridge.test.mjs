@@ -139,6 +139,31 @@ test("拒绝匹配 ID 但远端不符或挂载多个仓库的任务", async () =
   assert.throws(() => new Kandev({ url: "https://example.com" }), /回环/);
 });
 
+test("报告已写入但 Provider 失败时通知阻塞并保存报告", async () => {
+  const journal = new Journal(":memory:");
+  journal.bind({ user: "U1", channel: "D1", thread: "1.1" }, id, task.title, "research");
+  const saved = [];
+  const { bridge, posts } = setup(journal, {
+    kandev: {
+      status: async () => ({ ...task, state: "REVIEW", stage: "Gemini 最终中文报告",
+        primary_session_state: "WAITING_FOR_INPUT", status_summary: { turn_error: {
+          stamp: "native-error-event", preview: "服务方返回的原始错误数据",
+        } } }),
+      plan: async () => ({ content: "## Slack 执行报告\n摘要：已核对样本证据" }),
+    },
+    saveReport: async (taskID, report) => saved.push([taskID, report]),
+  });
+  await bridge.notify();
+  await bridge.notify();
+  assert.equal(await bridge.deliverOne(), true);
+  assert.equal(await bridge.deliverOne(), false);
+  assert.deepEqual(saved, [[id, "摘要：已核对样本证据"]]);
+  assert.match(posts[0].text, /Agent 最近一轮执行异常/);
+  assert.match(posts[0].text, /报告已保存/);
+  assert.doesNotMatch(posts[0].text, /原始错误数据|COMPLETED/);
+  journal.close();
+});
+
 test("Socket Mode 回执发生在入库之后，断线后重连", async () => {
   const controller = new AbortController();
   const persisted = [];

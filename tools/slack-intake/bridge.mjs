@@ -82,7 +82,7 @@ export class Bridge {
     const task = await this.kandev.status(id);
     if (action === "status") {
       const plan = await this.kandev.plan(id);
-      const details = task.state === "COMPLETED" ? await this.report(id, plan) : this.planStatus(plan);
+      const details = await this.taskDetails(task, plan);
       return this.statusText(task, details);
     }
     if (action === "approve") {
@@ -147,7 +147,9 @@ export class Bridge {
     const state = task.primary_session_state && task.primary_session_state !== task.state
       ? ` · 会话 ${task.primary_session_state}` : "";
     return [`${publicText(task.title)} · ${task.state} · ${task.stage}${state}`,
-      pending && "有待处理事项，详见 Kandev。", this.link(task.id), report].filter(Boolean).join("\n");
+      pending && "有待处理事项，详见 Kandev。",
+      task.status_summary?.turn_error && "Agent 最近一轮执行异常，详见 Kandev。",
+      this.link(task.id), report].filter(Boolean).join("\n");
   }
   planStatus(plan) {
     const content = plan?.content ?? "";
@@ -168,6 +170,14 @@ export class Bridge {
     return [summary && !hasSecret(summary) ? `Gemini 摘要 · ${publicText(summary).slice(0, 420)}` : "完整报告见 Kandev 任务计划。",
       authorizedPR].filter(Boolean).join("\n");
   }
+  async taskDetails(task, plan) {
+    if (task.state === "COMPLETED") return this.report(task.id, plan);
+    const report = reportText(plan);
+    const status = this.planStatus(plan);
+    if (!report || hasSecret(report)) return status;
+    await this.saveReport(task.id, report);
+    return [status, "Gemini 报告已保存，任务状态以 Kandev 为准。"].filter(Boolean).join("\n");
+  }
   async notify() {
     for (const binding of this.journal.tracked()) {
       if (!this.allowed(binding)) continue;
@@ -176,13 +186,14 @@ export class Bridge {
         const pending = task.task_pending_action ?? task.primary_session_pending_action;
         const terminal = ["COMPLETED", "FAILED", "CANCELLED", "BLOCKED"].includes(task.state);
         const agentError = ["FAILED", "CANCELLED"].includes(task.primary_session_state);
+        const turnError = task.status_summary?.turn_error;
         const plan = task.state === "CREATED" ? null : await this.kandev.plan(task.id);
         const status = this.planStatus(plan);
         const blocked = status.startsWith("Slack 阻塞");
-        if (!terminal && !pending && !agentError && !blocked) continue;
-        const key = `status:${task.id}:${task.state}:${task.workflow_step_id}:${task.primary_session_state ?? ""}:${Boolean(pending)}`;
+        if (!terminal && !pending && !agentError && !turnError && !blocked) continue;
+        const key = `status:${task.id}:${task.state}:${task.workflow_step_id}:${task.primary_session_state ?? ""}:${Boolean(pending)}:${turnError?.stamp ?? ""}`;
         if (this.journal.hasDelivery(key)) continue;
-        const report = task.state === "COMPLETED" ? await this.report(task.id, plan) : status;
+        const report = await this.taskDetails(task, plan);
         this.journal.enqueue(key, binding, this.statusText(task, report));
       } catch {
         // A transient Kandev read failure leaves the task available for the next poll.
