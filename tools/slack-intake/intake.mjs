@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { decisionSchema, validateDecision } from "./policy.mjs";
+import { DecisionValidationError, decisionSchema, maxAcceptanceItems, validateDecision } from "./policy.mjs";
 
 const instructions = `
 你是业务讨论与 Kandev 任务分流专用的 Claude Intake。你的输出只是建议，程序会审查权限。
@@ -19,6 +19,7 @@ deep 用于架构、键盘、个人数据、隐私、安全、复杂跨模块。
 保留真实未知。风险值限 architecture、keyboard、personal_data、privacy、security、cross_module。
 不适用的文本和数组留空。无工具调用。不要假称已创建、已验证或已执行。
 任务标题最多 60 字。
+验收条件最多 ${maxAcceptanceItems} 条，每条最多 360 字符。把相关要求归并为同一条，保留各项要求、限制和验收标准。
 `;
 
 function run(command, args, cwd, env, input) {
@@ -40,24 +41,43 @@ function run(command, args, cwd, env, input) {
   }).catch(error => { throw new Error("Claude Intake 执行失败", { cause: error }); });
 }
 
-export function claudeIntake(command = "claude") {
+export function claudeIntake(command = "claude", runCommand = run) {
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
     ["HOME", "PATH", "USER", "LOGNAME", "SHELL", "LANG", "LC_ALL", "TMPDIR", "TERM", "CLAUDE_CONFIG_DIR"].includes(key)));
   return async input => {
     const cwd = await mkdtemp(join(tmpdir(), "rea-intake-"));
     try {
-      const auth = await run(command, ["auth", "status", "--json"], cwd, env);
+      const auth = await runCommand(command, ["auth", "status", "--json"], cwd, env);
       if (!auth.loggedIn || auth.authMethod !== "claude.ai" || auth.apiProvider !== "firstParty" || !auth.subscriptionType) {
         throw new Error("需要已有 Claude 订阅登录");
       }
-      const reply = await run(command, [
-        "-p", "--safe-mode", "--tools", "", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
-        "--setting-sources", "", "--settings", '{"disableAllHooks":true,"disableClaudeAiConnectors":true}',
-        "--disable-slash-commands", "--no-session-persistence", "--model", "default",
-        "--system-prompt", instructions, "--output-format", "json", "--json-schema", JSON.stringify(decisionSchema),
-      ], cwd, env, JSON.stringify(input));
-      if (reply.is_error || !reply.structured_output) throw new Error("Claude 未返回结构化意图");
-      return validateDecision(reply.structured_output);
+      const generate = async (payload, prompt) => {
+        const reply = await runCommand(command, [
+          "-p", "--safe-mode", "--tools", "", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
+          "--setting-sources", "", "--settings", '{"disableAllHooks":true,"disableClaudeAiConnectors":true}',
+          "--disable-slash-commands", "--no-session-persistence", "--model", "default",
+          "--system-prompt", prompt, "--output-format", "json", "--json-schema", JSON.stringify(decisionSchema),
+        ], cwd, env, JSON.stringify(payload));
+        if (reply.is_error || !reply.structured_output) {
+          throw new DecisionValidationError("Claude 未返回可校验的结构化任务简报");
+        }
+        return reply.structured_output;
+      };
+      const decision = await generate(input, instructions);
+      try {
+        return validateDecision(decision);
+      } catch (error) {
+        if (!(error instanceof DecisionValidationError) || error.code !== "acceptance_count") throw error;
+        const revised = await generate({ ...input, acceptanceToMerge: decision.acceptance }, instructions + `
+仅归并 acceptanceToMerge 的相近条目。每条既有条件必须以完整原文保留在某条验收条件中，
+可以用标点连接，不能增加或省略要求。其他字段维持当前任务意图。
+`);
+        const repaired = validateDecision({ ...decision, acceptance: revised.acceptance });
+        if (!decision.acceptance.every(original => repaired.acceptance.some(item => item.includes(original)))) {
+          throw new DecisionValidationError("Claude 归并验收条件时遗漏或改写了原条件");
+        }
+        return repaired;
+      }
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }

@@ -1,4 +1,4 @@
-import { brief, directTaskID, executionDepth, hasSecret, publicText, slackEvent, validateDecision } from "./policy.mjs";
+import { DecisionValidationError, brief, directTaskID, executionDepth, hasSecret, publicText, slackEvent, validateDecision } from "./policy.mjs";
 
 function reportText(plan) {
   const content = plan?.content ?? plan?.plan?.content;
@@ -67,8 +67,13 @@ export class Bridge {
         this.journal.finish(event, text);
       }
     } catch (error) {
-      this.journal.issue(event.id, "failure", "请核对本机操作状态");
-      this.journal.finish(event, "本次操作未获成功确认。请在 Kandev 核对当前任务或状态后重试。", "操作未获确认");
+      if (error instanceof DecisionValidationError) {
+        this.journal.issue(event.id, "failure", error.message);
+        this.journal.finish(event, `简报未通过校验：${error.message}。未执行 Kandev 操作。`, "简报校验失败");
+      } else {
+        this.journal.issue(event.id, "failure", "请核对本机操作状态");
+        this.journal.finish(event, "本次操作未获成功确认。请在 Kandev 核对当前任务或状态后重试。", "操作未获确认");
+      }
     }
     return true;
   }

@@ -1,4 +1,5 @@
 export const depths = ["light", "standard", "deep"];
+export const maxAcceptanceItems = 8;
 const actions = ["discuss", "create", "research", "status", "pause", "resume", "review", "retarget", "approve", "depth", "clarify", "restricted"];
 const risks = ["architecture", "keyboard", "personal_data", "privacy", "security", "cross_module"];
 const taskID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
@@ -22,6 +23,13 @@ export const decisionSchema = {
   },
 };
 
+export class DecisionValidationError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.code = code;
+  }
+}
+
 export function hasSecret(text) {
   return sensitive.test(text);
 }
@@ -44,20 +52,42 @@ export function slackEvent(envelope, config, bot) {
 }
 
 export function validateDecision(value) {
-  if (!value || typeof value !== "object" || Object.keys(value).sort().join() !== [...decisionSchema.required].sort().join()
-      || !actions.includes(value.action) || !depths.includes(value.depth)
-      || typeof value.uncertain !== "boolean" || !Array.isArray(value.risks)
-      || !value.risks.every(risk => risks.includes(risk))
-      || !Array.isArray(value.acceptance) || value.acceptance.length > 8
-      || !value.acceptance.every(item => typeof item === "string" && item.length <= 360 && item.trim())
-      || ![["reply", 1200], ["title", 60], ["goal", 1800], ["task", 36]].every(([key, max]) =>
-        typeof value[key] === "string" && value[key].length <= max && !hasSecret(value[key]))
-      || value.acceptance.some(hasSecret) || (value.task && !taskID.test(value.task))) {
-    throw new Error("Claude Intake 返回的结构不符合约定");
+  if (!value || typeof value !== "object" || Object.keys(value).sort().join() !== [...decisionSchema.required].sort().join()) {
+    throw new DecisionValidationError("Claude 返回的任务简报字段不完整或包含未知字段");
+  }
+  if (!actions.includes(value.action) || !depths.includes(value.depth)) {
+    throw new DecisionValidationError("Claude 返回的任务操作或执行深度不受支持");
+  }
+  if (typeof value.uncertain !== "boolean" || !Array.isArray(value.risks) || !value.risks.every(risk => risks.includes(risk))) {
+    throw new DecisionValidationError("Claude 返回的风险分类或不确定性标记无效");
+  }
+  for (const [key, label, max] of [["reply", "回复", 1200], ["title", "标题", 60], ["goal", "目标", 1800], ["task", "任务 ID", 36]]) {
+    if (typeof value[key] !== "string" || value[key].length > max) {
+      throw new DecisionValidationError(`Claude 返回的${label}必须是最多 ${max} 字符的文本`);
+    }
+  }
+  if (value.task && !taskID.test(value.task)) {
+    throw new DecisionValidationError("Claude 返回的任务 ID 格式无效");
+  }
+  if (!Array.isArray(value.acceptance) || !value.acceptance.every(item => typeof item === "string" && item.trim())) {
+    throw new DecisionValidationError("Claude 返回的验收条件必须是非空文本条目的列表");
+  }
+  const oversized = value.acceptance.findIndex(item => item.length > 360);
+  if (oversized !== -1) {
+    throw new DecisionValidationError(`Claude 返回的第 ${oversized + 1} 条验收条件超过 360 字符`);
+  }
+  if ([value.reply, value.title, value.goal, value.task, ...value.acceptance].some(hasSecret)) {
+    throw new DecisionValidationError("Claude 返回的任务简报包含疑似凭据，内容已省略");
   }
   if (["create", "research", "retarget"].includes(value.action)
       && (!value.title.trim() || !value.goal.trim() || !value.acceptance.length)) {
-    throw new Error("任务须有目标与验收条件");
+    throw new DecisionValidationError("Claude 返回的任务缺少标题、目标或验收条件");
+  }
+  if (value.acceptance.length > maxAcceptanceItems) {
+    throw new DecisionValidationError(
+      `Claude 返回了 ${value.acceptance.length} 条验收条件，上限为 ${maxAcceptanceItems} 条`,
+      "acceptance_count",
+    );
   }
   return value;
 }
