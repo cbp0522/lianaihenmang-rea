@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { Bridge } from "./bridge.mjs";
+import { claudeIntake } from "./intake.mjs";
 import { Journal } from "./journal.mjs";
 import { Kandev } from "./kandev.mjs";
 import { Slack } from "./slack.mjs";
@@ -116,6 +117,67 @@ test("确认启动可以按唯一任务名称恢复，工具批准仍由原流�
   assert.deepEqual(starts, [id]);
   assert.equal(approvals, 1);
   journal.close();
+});
+
+test("长研究请求经一次归并后保留所有条件且重复事件只建一单", async () => {
+  const journal = new Journal(":memory:");
+  const acceptance = [
+    "列出已知功能", "引用现有证据", "区分推断和已确认事实", "对照原创实现差距",
+    "说明功能优先级", "列出技术难点", "推荐下一阶段", "生成中文报告", "保持只读，不绕过保护",
+  ];
+  const message = "先读取已有研究资料。仅研究和规划。" + acceptance.join("。");
+  const original = decision("research", { goal: "核对已有研究，仅做只读规划", acceptance });
+  const merged = [acceptance.slice(0, 2).join("，"), ...acceptance.slice(2)];
+  const requests = [];
+  const intake = claudeIntake("fixture", async (_command, args, _cwd, _env, raw) => {
+    if (args[0] === "auth") return { loggedIn: true, authMethod: "claude.ai", apiProvider: "firstParty", subscriptionType: "pro" };
+    requests.push({ args, payload: JSON.parse(raw) });
+    return { structured_output: requests.length === 1 ? original : { ...original, acceptance: merged } };
+  });
+  const { bridge, calls } = setup(journal, { intake });
+  const envelope = event("long-research", message);
+  assert.equal(bridge.accept(envelope, "UBOT"), true);
+  assert.equal(bridge.accept(envelope, "UBOT"), false);
+  await bridge.processOne();
+  assert.equal(bridge.accept(envelope, "UBOT"), false);
+  assert.equal(await bridge.processOne(), false);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].depth, "research");
+  assert.equal(calls[0].id, "long-research");
+  assert.equal(requests.length, 2);
+  assert.match(requests[0].args[requests[0].args.indexOf("--system-prompt") + 1], /验收条件最多 8 条/);
+  assert.equal(requests[1].payload.message, message);
+  assert.deepEqual(requests[1].payload.acceptanceToMerge, acceptance);
+  const brief = JSON.parse(calls[0].prompt.split("\n")[1]);
+  assert.equal(brief.goal, original.goal);
+  assert.deepEqual(brief.acceptance, merged);
+  for (const requirement of acceptance) {
+    assert.ok(brief.acceptance.some(item => item.includes(requirement)));
+  }
+  journal.close();
+});
+
+test("归并仍超限或丢失条件时说明具体原因，且不建单", async () => {
+  const original = decision("research", { acceptance: Array.from({ length: 9 }, (_, i) => `研究要求 ${i + 1}`) });
+  for (const [revised, reason] of [
+    [original.acceptance, /9 条验收条件，上限为 8 条/],
+    [original.acceptance.slice(0, 8), /归并验收条件时遗漏或改写了原条件/],
+  ]) {
+    const journal = new Journal(":memory:");
+    let generations = 0;
+    const intake = claudeIntake("fixture", async (_command, args) => {
+      if (args[0] === "auth") return { loggedIn: true, authMethod: "claude.ai", apiProvider: "firstParty", subscriptionType: "pro" };
+      return { structured_output: ++generations === 1 ? original : { ...original, acceptance: revised } };
+    });
+    const { bridge, calls, posts } = setup(journal, { intake });
+    bridge.accept(event("invalid-acceptance", "研究已有证据"), "UBOT");
+    await bridge.processOne();
+    await bridge.deliverOne();
+    assert.equal(generations, 2);
+    assert.equal(calls.length, 0);
+    assert.match(posts[0].text, reason);
+    journal.close();
+  }
 });
 
 test("真实 SQLite 重启后限流通知补发且报告只投递一次", async () => {
