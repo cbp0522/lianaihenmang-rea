@@ -55,6 +55,8 @@ bash tools/check.sh
 bash tools/build-ios.sh fixture device "$HOME/app-research/验收样本/fixture-device"
 ```
 
+本地 `bash tools/check.sh` 运行研究器和原创产品逻辑等单元测试，并检查 Python、Shell 语法及 Git 差异中的空白问题，全程无需启动模拟器，而 GitHub CI 中的 iOS 模拟器 XCTest 仅在 iPhone 模拟器上核对自制样本 ResearchCounter 的初始、增加一次和归零后的计数显示，并将截图保存为测试附件。
+
 GitHub Actions 使用 macOS 编译真实 arm64 Mach-O 测试包，运行研究器、样本 XCTest 和原创产品编译。[系统架构与部署](docs/系统架构.md) · [自制样本报告](docs/验收样本/研究报告.md)
 
 ## Slack 私聊入口
