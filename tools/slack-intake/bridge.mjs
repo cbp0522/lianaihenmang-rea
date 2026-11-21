@@ -6,6 +6,17 @@ function reportText(plan) {
   return content.match(/^#{1,6}\s+Slack 执行报告\s*\n([\s\S]*)$/m)?.[1]?.trim() ?? "";
 }
 
+function confirmedStart(text, tasks) {
+  const name = text.match(/^(?:我\s*)?确认\s*(?:现在\s*)?启动\s*(.+?)\s*[。！!]?$/u)?.[1];
+  if (!name) return;
+  const normalize = value => value.normalize("NFKC").toLowerCase().replace(/[\s「」“”"]/gu, "");
+  const target = normalize(name);
+  const matches = tasks.filter(task => [task.title, task.task].some(value => normalize(value) === target));
+  if (matches.length === 1) {
+    return { action: "resume", task: matches[0].task, depth: "light", goal: "", acceptance: [], risks: [] };
+  }
+}
+
 export class Bridge {
   constructor({ config, kandev, journal, intake, slack, saveReport }) {
     Object.assign(this, { config, kandev, journal, intake, slack, saveReport });
@@ -45,7 +56,7 @@ export class Bridge {
           const task = await this.kandev.scope(explicit);
           tasks.unshift({ task: task.id, title: task.title, state: task.state });
         }
-        const decision = item.decision ?? validateDecision(await this.intake({
+        const decision = item.decision ?? confirmedStart(event.text, tasks) ?? validateDecision(await this.intake({
           repository: this.config.kandev.slug, message: event.text,
           history: this.journal.history(event), tasks,
         }));

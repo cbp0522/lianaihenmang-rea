@@ -93,6 +93,31 @@ test("任务控制确认码绑定发送者与线程且只能用一次", async ()
   journal.close();
 });
 
+test("确认启动可以按唯一任务名称恢复，工具批准仍由原流程处理", async () => {
+  const journal = new Journal(":memory:");
+  const source = { user: "U1", channel: "D1", thread: "1910000000.000001" };
+  journal.bind(source, id, "Slack 只读验收", "research");
+  const starts = [];
+  let approvals = 0;
+  const { bridge } = setup(journal, {
+    intake: async () => decision("approve", { task: id }),
+    kandev: {
+      status: async () => task,
+      resume: async target => { starts.push(target); return task; },
+      safeApproval: async () => { approvals++; return null; },
+    },
+  });
+  assert.equal(bridge.accept(event("start", "确认启动slack只读验收"), "UBOT"), true);
+  await bridge.processOne();
+  assert.deepEqual(starts, [id]);
+  assert.equal(approvals, 0);
+  assert.equal(bridge.accept(event("approve", "确认批准工具权限"), "UBOT"), true);
+  await bridge.processOne();
+  assert.deepEqual(starts, [id]);
+  assert.equal(approvals, 1);
+  journal.close();
+});
+
 test("真实 SQLite 重启后限流通知补发且报告只投递一次", async () => {
   const home = mkdtempSync(join(tmpdir(), "rea-journal-"));
   const file = join(home, "delivery.sqlite");

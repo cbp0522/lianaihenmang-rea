@@ -10,6 +10,7 @@ const instructions = `
 意图：discuss 为探索和探讨，create 为明确开发或修复，research 为明确要求研究但不改产品。
 status 为进度、原因、报告、PR 或 CI 查询，pause/resume/review 为已有任务监督，
 retarget 为用户明确修改目标，depth 为调整执行深度，approve 为查看可授权操作。
+「确认启动」「现在开始已有任务」「继续执行已有任务」表示 resume。approve 只用于批准待处理的工具权限。
 只有目标含糊或多个任务无法辨认时 clarify。涉及删除、合并、部署、付费、绕过权限用 restricted。
 讨论不得转为开发。执行只传必要事实、目标和可验证验收，省略聊天原文、路径、命令和秘密。
 任务 ID 只能采用输入列出的任务，或用户明确给出的完整 ID。无目标任务时填空字符串。
