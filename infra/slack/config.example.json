@@ -1,0 +1,30 @@
+{
+  "slack": {
+    "team": "T填写工作区ID",
+    "app": "A填写应用ID",
+    "users": ["U填写允许用户ID"],
+    "channels": ["D填写App私聊ID"]
+  },
+  "claudePath": "/opt/homebrew/bin/claude",
+  "kandev": {
+    "slug": "cbp0522/lianaihenmang-rea",
+    "base": "research/kandev-native-antigravity",
+    "url": "http://127.0.0.1:38439",
+    "viewUrl": "http://127.0.0.1:38439",
+    "workspace": "填写工作区UUID",
+    "repository": "填写仓库UUID",
+    "executor": "填写Worktree执行器UUID",
+    "autoStart": false,
+    "profiles": {
+      "antigravity-acp": "填写Gemini既有Profile的UUID",
+      "claude-acp": "填写Claude既有Profile的UUID",
+      "codex-acp": "填写Codex既有Profile的UUID"
+    },
+    "workflows": {
+      "light": "填写轻量工作流UUID",
+      "standard": "填写标准工作流UUID",
+      "deep": "填写深度工作流UUID",
+      "research": "填写仅研究工作流UUID"
+    }
+  }
+}
