@@ -18,6 +18,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: 验证 Slack 入口与原生工作流合同
+        run: node --test tools/slack-intake/*.test.mjs
       - run: bash tools/check.sh
       - name: 验证真实 arm64 Mach-O IPA
         run: |
@@ -27,17 +32,21 @@ jobs:
           jq -e '(.["可执行文件"]["加密标记"] == [0]) and
             (.["可执行文件"]["动态依赖"] | any(contains("SwiftUI")))' "$RUNNER_TEMP/research-report/static.json"
           grep -F '主程序加密标记 [0]' "$RUNNER_TEMP/research-report/研究报告.md"
-      - name: 运行样本 XCTest
+      - name: 启动 iOS 模拟器
         timeout-minutes: 8
         run: |
           simulator="$(xcrun simctl list devices available -j | jq -er '
             [.devices | to_entries | sort_by(.key) | reverse | .[] |
              select(.key | contains(".iOS-")) | .value[] | select(.name | startswith("iPhone"))][0].udid')"
           xcrun simctl bootstatus "$simulator" -b
+          echo "IOS_SIMULATOR_UDID=$simulator" >> "$GITHUB_ENV"
+      - name: 运行样本 XCTest
+        timeout-minutes: 8
+        run: |
           xcodebuild test -project fixtures/ResearchCounter.xcodeproj -scheme ResearchCounter \
-            -destination "platform=iOS Simulator,id=$simulator" \
+            -destination "platform=iOS Simulator,id=$IOS_SIMULATOR_UDID" \
             -destination-timeout 120 -derivedDataPath "$RUNNER_TEMP/fixture-derived" \
-            -parallel-testing-enabled NO
+            -parallel-testing-enabled NO ONLY_ACTIVE_ARCH=YES
       - name: 编译原创 iOS 产品
         run: |
           bash tools/build-ios.sh product simulator "$RUNNER_TEMP/focus-sim"
