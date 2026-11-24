@@ -45,11 +45,20 @@ export class Kandev {
       protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "rea-slack-intake", version: "1" },
     } });
     if (!sid) throw new Error("Kandev 未返回 MCP 会话");
-    await send({ method: "notifications/initialized" }, sid);
-    const [reply] = await send({ id: 2, method: "tools/call", params: { name: method, arguments: arguments_ } }, sid);
-    const content = reply?.result?.content?.[0]?.text;
-    if (!content || reply.error || reply.result.isError) throw new Error(`Kandev 未接受 ${method}`);
-    try { return JSON.parse(content); } catch { return content; }
+    try {
+      await send({ method: "notifications/initialized" }, sid);
+      const [reply] = await send({ id: 2, method: "tools/call", params: { name: method, arguments: arguments_ } }, sid);
+      const content = reply?.result?.content?.[0]?.text;
+      if (!content || reply.error || reply.result.isError) throw new Error(`Kandev 未接受 ${method}`);
+      try { return JSON.parse(content); } catch { return content; }
+    } finally {
+      // 此处仅结束 HTTP MCP 客户端会话。Agent 执行会话由 Kandev 独立管理。
+      if (method === "list_pending_agent_permissions_kandev" || method === "resolve_agent_permission_kandev") {
+        await this.fetch(this.url + "/mcp", {
+          method: "DELETE", headers: { "Mcp-Session-Id": sid }, redirect: "error", signal: AbortSignal.timeout(2000),
+        }).catch(() => {});
+      }
+    }
   }
 
   ws(action, payload) {
@@ -235,6 +244,23 @@ export class Kandev {
     await this.scope(id);
     const data = await this.mcp("list_pending_agent_permissions_kandev", { task_id: id });
     return data.permissions ?? [];
+  }
+
+  async permissionSession(task, sessionID) {
+    const { sessions } = await this.rest(`/tasks/${task.id}/sessions`);
+    return sessions.find(session => session.id === sessionID && session.id === task.primary_session_id
+        && session.repository_id === this.route.repository
+        && Object.values(this.route.profiles).includes(session.agent_profile_id));
+  }
+
+  async resolvePermission(identity, option) {
+    const args = { ...identity, option_id: option.option_id };
+    const result = await this.mcp("resolve_agent_permission_kandev", args);
+    if (result?.status !== "resolved" || result.option_kind !== option.kind
+        || Object.entries(args).some(([key, value]) => result[key] !== value)) {
+      throw new Error("Kandev 未确认原请求的审批结果");
+    }
+    return result;
   }
 
   async safeApproval(id, requestID) {

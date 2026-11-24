@@ -38,7 +38,7 @@ export class Slack {
     }
     return url;
   }
-  async listen(onEnvelope, signal) {
+  async listen(onEnvelope, signal, onConnected = () => {}) {
     let delay = 1000;
     while (!signal.aborted) {
       const started = Date.now();
@@ -58,6 +58,7 @@ export class Slack {
             try {
               const envelope = JSON.parse(event.data);
               if (envelope.type === "disconnect") return finish();
+              if (envelope.type === "hello") onConnected();
               if (typeof envelope.envelope_id === "string") {
                 onEnvelope(envelope);
                 socket.send(JSON.stringify({ envelope_id: envelope.envelope_id }));
