@@ -133,9 +133,9 @@ export class Journal {
     const row = this.db.prepare("SELECT * FROM approval_cards WHERE id=?").get(id);
     return row && { ...row, subject: JSON.parse(row.subject) };
   }
-  approvalsFor(event) {
+  approvalsFor(event, limit = 40) {
     return this.db.prepare(`SELECT id FROM approval_cards WHERE user=? AND channel=? AND thread=?
-      ORDER BY created DESC LIMIT 40`).all(event.user, event.channel, event.thread).map(({ id }) => this.approval(id));
+      ORDER BY created DESC LIMIT ?`).all(event.user, event.channel, event.thread, limit).map(({ id }) => this.approval(id));
   }
   authorizedMerges() {
     return this.db.prepare("SELECT id FROM approval_cards WHERE kind='merge' AND state='authorized'")
@@ -152,6 +152,9 @@ export class Journal {
   saveApprovalRule(scope, kind, expires, now) {
     this.db.prepare("DELETE FROM approval_rules WHERE expires<=?").run(now);
     this.db.prepare("INSERT OR REPLACE INTO approval_rules VALUES(?,?,?,?)").run(scope, kind, now, expires);
+  }
+  revokeApprovalRule(scope) {
+    return this.db.prepare("DELETE FROM approval_rules WHERE scope=? AND kind='allow'").run(scope).changes;
   }
   approvalSent(id) {
     return this.db.prepare("SELECT state FROM outbox WHERE id=?").get(`approval:${id}`)?.state === "sent";

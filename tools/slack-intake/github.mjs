@@ -77,8 +77,8 @@ export class GitHubApproval {
         || !repo.permissions?.push || repo.permissions.admin !== false || repo.permissions.maintain !== false) return "waiting";
     const status = threads.data?.repository?.pullRequest;
     if (status?.headRefOid !== saved.head || status.baseRefName !== saved.base
-        || status.mergeStateStatus !== "CLEAN" || status.reviewThreads?.pageInfo?.hasNextPage !== false
-        || !status.reviewThreads.nodes.every(thread => thread.isResolved || thread.isOutdated)) return "waiting";
+        || status.reviewThreads?.pageInfo?.hasNextPage !== false) return "waiting";
+    if (!status.reviewThreads.nodes.every(thread => thread.isResolved || thread.isOutdated)) return "blocked";
 
     // Review 按 GitHub 返回的时间顺序折叠，仅有明确状态的审查会替换前一次决定。
     if (!Array.isArray(reviews) || reviews.length >= 100) return "waiting";
@@ -90,10 +90,7 @@ export class GitHubApproval {
     }
     const reviewer = this.policy.reviewer.toLowerCase();
     const approval = decisions.get(reviewer);
-    if (reviewer === saved.author.toLowerCase() || approval?.state !== "APPROVED" || approval.commit_id !== saved.head
-        || !["OWNER", "MEMBER", "COLLABORATOR"].includes(approval.author_association)
-        || !/^Claude 独立审查[:：]通过[。]?$/m.test(approval.body ?? "")
-        || [...decisions.values()].some(review => review.state === "CHANGES_REQUESTED")) return "waiting";
+    if ([...decisions.values()].some(review => review.state === "CHANGES_REQUESTED")) return "blocked";
 
     const runs = actions.workflow_runs;
     if (!Array.isArray(runs) || !Number.isInteger(actions.total_count) || actions.total_count !== runs.length || runs.length >= 100
@@ -102,6 +99,15 @@ export class GitHubApproval {
     const currentRun = runs.filter(run => run.head_sha === saved.head && run.event === "pull_request"
       && run.path === ".github/workflows/checks.yml" && run.repository?.full_name === this.slug
       && run.pull_requests?.some(item => item.number === saved.number)).sort((a, b) => b.id - a.id)[0];
+    const failures = new Set(["failure", "cancelled", "timed_out", "action_required", "startup_failure", "stale"]);
+    if ((currentRun?.status === "completed" && failures.has(currentRun.conclusion))
+        || checks.check_runs.some(check => check.head_sha === saved.head && check.status === "completed"
+          && failures.has(check.conclusion))
+        || legacy.statuses.some(status => ["failure", "error"].includes(status.state))) return "blocked";
+    if (reviewer === saved.author.toLowerCase() || approval?.state !== "APPROVED" || approval.commit_id !== saved.head
+        || !["OWNER", "MEMBER", "COLLABORATOR"].includes(approval.author_association)
+        || !/^Claude 独立审查[:：]通过[。]?$/m.test(approval.body ?? "")
+        || status.mergeStateStatus !== "CLEAN") return "waiting";
     if (currentRun?.status !== "completed" || currentRun.conclusion !== "success"
         || !checks.check_runs.some(check => check.app?.slug === "github-actions" && check.name === "check"
           && check.details_url?.startsWith(`https://github.com/${this.slug}/actions/runs/${currentRun.id}/job/`)

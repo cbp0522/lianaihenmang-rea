@@ -102,7 +102,7 @@ async function main() {
   console.log("Slack Intake 已启动");
   try {
     await Promise.all([
-      slack.listen(envelope => bridge.accept(envelope, bot), signal),
+      slack.listen(envelope => bridge.accept(envelope, bot), signal, () => console.log("Slack Socket Mode 已确认连接")),
       loop(() => bridge.processOne(), 350),
       loop(() => bridge.deliverOne(), 500),
       loop(() => bridge.notify(), 25000),

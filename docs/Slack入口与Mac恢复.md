@@ -54,7 +54,10 @@ node tools/slack-intake/main.mjs "$private/config.json"
 ```json
 {
   "approvals": {
-    "readFiles": ["/private/tmp/rea-native-approval-pilot/evidence.md"],
+    "readFiles": ["/path/to/approved-evidence.md"],
+    "toolHours": 2,
+    "readGrantHours": 4,
+    "mergeHours": 1,
     "taskIds": ["填写独立测试任务的 UUID"]
   }
 }
@@ -67,10 +70,12 @@ node tools/slack-intake/main.mjs "$private/config.json"
 | 允许这次。 | 仅提交当前请求提供的 `allow_once`。 |
 | 为什么需要？ | 说明已知操作和范围，必要时提示在 Kandev 看原始详情。 |
 | 只允许读取这个文件。 | 只在请求已是清单中的单文件读取时批准。 |
-| 这个任务里同类型的只读操作以后都允许。 | 当前单次许可后，未来 10 分钟内，同任务、同会话、同阶段、同一文件版本的请求可重用授权。每次仍由 Kandev 处理新的原生单次选项。 |
+| 这个任务里同类型的只读操作以后都允许。 | 当前单次许可后，未来默认 4 小时内，同任务、同会话、同阶段、同一文件版本的请求可重用授权。每次仍由 Kandev 处理新的原生单次选项。 |
 | 拒绝。 | 提交 `reject_once`。相同文件版本的重复请求可在 10 分钟内复用拒绝，过期时间按最初明确回复计算。 |
 
-一个线程同时有多个请求时，回复「审批 编号 允许这次」。入口核对 Slack 工作区、应用、用户、私聊、线程、消息时间和原生请求代次。回复含额外条件或 Claude 分类与确定性规则不一致时，入口要求澄清。工具批准从原生请求创建起最多 10 分钟。
+线程里出现过多张审批卡时，以「审批 编号」开头回复，避免把对上一张卡的延迟回复用于新请求。可以回复「现在还需要这个权限吗？」「如果还在等待，就允许」「这个请求已经过期了吗？」或「取消之前的持续授权」。可以继续查历史用途和当前任务状态。失效的卡不会执行。原线程撤销该线程内的持续许可，指定编号则只撤销该卡的只读范围。已经提交给 Kandev 的单次决定不能撤回。
+
+`toolHours` 默认 2，允许 1–8 个整数小时，仅延长可核对的单文件读取卡。其它工具仍保持 10 分钟的 Slack 处理窗口。`readGrantHours` 默认 4，允许 1–8，且每次复用都需要新的原生待审批请求。Slack 处理期限从原生请求创建起算，如果原生先取消、结束、换代或参数变化便立即失效。既有卡片保留发出时的上限。入口核对工作区、应用、用户、私聊、线程、消息时间、原生请求代次和当前文件版本。回复含额外条件或 Claude 分类与确定性规则不一致时要求澄清。
 
 只有能核对规范路径的清单内普通文件读取能从 Slack 批准。缺少结构化路径、被脱敏、写入、构建测试命令、Git 命令、网络、敏感操作和 Provider 互动问题继续由原生界面处理。程序不从标题、Shell 文本或模型说明推断操作范围。三种 Agent Profile 保持关闭全局自动批准。可用的 Provider 持久选项没有本入口要求的阶段、文件和到期粒度，因此本入口不选 `allow_always`。相关原生工具与协议见 [Kandev 0.102.0 权限工具源码](https://github.com/kdlbs/kandev/blob/v0.102.0/apps/backend/internal/mcp/handlers/agent_permissions.go) 和 [ACP 工具调用](https://agentclientprotocol.com/protocol/v1/tool-calls)。
 
@@ -94,7 +99,7 @@ node tools/slack-intake/main.mjs "$private/config.json"
 - 「允许合并这个 PR，但不要发布。」
 - 「先不要合并。」
 
-两种允许都受相同基础条件约束。GitHub 必须显示 PR 可合并，目标分支和基线提交、来源仓库及 HEAD 必须与授权快照一致，既有 GitHub Actions 和提交检查须成功。配置的独立审查人需在 GitHub 对该 HEAD 提交 `APPROVED`，在审查内容单独一行写「Claude 独立审查：通过」，表示已复核真实 Claude 独立审查。普通评论和任务计划里的自述只作为背景。未解决的有效审查线程、阻断审查或缺少检查时保持等待。用户可在发出 GitHub 请求前撤销授权。授权一小时后失效。
+两种允许都受相同基础条件约束。GitHub 必须显示 PR 可合并，目标分支和基线提交、来源仓库及 HEAD 必须与授权快照一致，既有 GitHub Actions 和提交检查须成功。配置的独立审查人需在 GitHub 对该 HEAD 提交 `APPROVED`，在审查内容单独一行写「Claude 独立审查：通过」，表示已复核真实 Claude 独立审查。普通评论和任务计划里的自述只作为背景。未解决的有效审查线程、阻断审查或缺少检查时保持等待。用户可在发出 GitHub 请求前撤销授权。`mergeHours` 默认 1，允许 1–24，窗口从卡片生成时起算。HEAD、目标分支、明确失败的检查或阻断审查都会终止原授权。
 
 入口仅用 [GitHub 原生合并 API](https://docs.github.com/en/rest/pulls/pulls#merge-a-pull-request) 提交精确 HEAD，确认 GitHub 返回的实际合并提交再回执。保持 GitHub 分支规则和保护，禁止当前权限桥分支自己的合并、默认分支、Draft、 fork 或超范围变更。入口没有发布操作。任何新的认证或账号授权由操作者在本机完成。
 
