@@ -18,8 +18,8 @@ function confirmedStart(text, tasks) {
 }
 
 export class Bridge {
-  constructor({ config, kandev, journal, intake, slack, saveReport }) {
-    Object.assign(this, { config, kandev, journal, intake, slack, saveReport });
+  constructor({ config, kandev, journal, intake, slack, saveReport, approvals }) {
+    Object.assign(this, { config, kandev, journal, intake, slack, saveReport, approvals });
   }
   link(id) {
     return `${this.config.kandev.viewUrl.replace(/\/$/, "")}/t/${id}`;
@@ -46,6 +46,11 @@ export class Bridge {
       return true;
     }
     try {
+      const result = await this.approvals?.reply(event);
+      if (result !== undefined) {
+        this.journal.finish(event, result);
+        return true;
+      }
       const matched = event.text.match(/^确认\s+([0-9a-f]{16})$/i);
       if (matched) {
         await this.confirm(event, matched[1]);
@@ -102,6 +107,11 @@ export class Bridge {
       return this.statusText(task, details);
     }
     if (action === "approve") {
+      if (this.approvals) {
+        const binding = this.journal.tracked().find(item => item.task === id && item.user === event.user && item.channel === event.channel);
+        if (binding) await this.approvals.pollTask(binding, task);
+        return "待审批工具会在任务原线程通知。请在对应审批下回复。";
+      }
       const request = await this.kandev.safeApproval(id);
       if (!request) return "当前没有可通过 Slack 单次批准的唯一原生计划工具请求。其他权限请在 Kandev 中查看。";
       const code = this.journal.confirm(event, { action, id, request });
@@ -153,6 +163,8 @@ export class Bridge {
         throw new Error("确认后原任务阶段已变化");
       }
       result = this.statusText(await this.kandev.pause(saved.id));
+    } else if (this.approvals) {
+      result = "此旧版工具确认已失效。请在新的工具审批消息中回复。";
     } else {
       result = `Kandev 已确认单次批准 ${await this.kandev.approve(saved.request)}。\n${this.link(saved.id)}`;
     }
@@ -200,6 +212,7 @@ export class Bridge {
       try {
         const task = await this.kandev.status(binding.task);
         const pending = task.task_pending_action ?? task.primary_session_pending_action;
+        if (pending) await this.approvals?.pollTask(binding, task);
         const terminal = ["COMPLETED", "FAILED", "CANCELLED", "BLOCKED"].includes(task.state);
         const agentError = ["FAILED", "CANCELLED"].includes(task.primary_session_state);
         const turnError = task.status_summary?.turn_error;
@@ -215,12 +228,17 @@ export class Bridge {
         // A transient Kandev read failure leaves the task available for the next poll.
       }
     }
+    await this.approvals?.pollMerges(card => this.allowed(card));
   }
   async deliverOne(now = Date.now()) {
     const item = this.journal.nextDelivery(now);
     if (!item) return false;
     if (!this.allowed(item)) {
       this.journal.delivery(item.id, "failed", "原接收人已不在白名单");
+      return true;
+    }
+    if (this.approvals && !this.approvals.deliverable(item.id)) {
+      this.journal.delivery(item.id, "failed", "审批已经关闭或过期");
       return true;
     }
     try {

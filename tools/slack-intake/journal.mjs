@@ -31,11 +31,19 @@ export class Journal {
         input TEXT NOT NULL, reply TEXT NOT NULL, created INTEGER NOT NULL
       );
       CREATE TABLE IF NOT EXISTS installation (id INTEGER PRIMARY KEY, scope TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS approval_cards (
+        id TEXT PRIMARY KEY, kind TEXT NOT NULL, user TEXT NOT NULL, channel TEXT NOT NULL, thread TEXT NOT NULL,
+        subject TEXT NOT NULL, created INTEGER NOT NULL, expires INTEGER NOT NULL, state TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS approval_rules (
+        scope TEXT PRIMARY KEY, kind TEXT NOT NULL, issued INTEGER NOT NULL, expires INTEGER NOT NULL
+      );
     `);
     if (recover) {
       this.db.exec("UPDATE outbox SET state='failed', error='中断时交付结果不明' WHERE state='sending'");
       // Kandev 建单有外部 ID。其他动作在调用结果不明时需要重新核对状态。
       this.db.exec("UPDATE inbox SET phase='queued' WHERE phase='working'");
+      this.db.exec("UPDATE approval_cards SET state='uncertain' WHERE state='executing'");
     }
   }
   installScope(scope) {
@@ -73,7 +81,7 @@ export class Journal {
   finish(event, text, error = null) {
     this.db.exec("BEGIN");
     try {
-      this.enqueue(`reply:${event.id}`, event, text);
+      if (text) this.enqueue(`reply:${event.id}`, event, text);
       this.db.prepare("UPDATE inbox SET phase='done',event='{}',result=NULL,error=? WHERE id=?").run(error, event.id);
       this.db.exec("COMMIT");
     } catch (err) {
@@ -115,6 +123,38 @@ export class Journal {
     const row = this.db.prepare(`DELETE FROM confirmations WHERE code=? AND user=? AND channel=?
       AND thread=? AND expires>=? RETURNING operation`).get(code, event.user, event.channel, event.thread, now);
     return row && JSON.parse(row.operation);
+  }
+  openApproval(id, kind, event, subject, now, expires) {
+    this.db.prepare("INSERT OR IGNORE INTO approval_cards VALUES(?,?,?,?,?,?,?,?,'pending')")
+      .run(id, kind, event.user, event.channel, event.thread, JSON.stringify(subject), now, expires);
+    return this.approval(id);
+  }
+  approval(id) {
+    const row = this.db.prepare("SELECT * FROM approval_cards WHERE id=?").get(id);
+    return row && { ...row, subject: JSON.parse(row.subject) };
+  }
+  approvalsFor(event) {
+    return this.db.prepare(`SELECT id FROM approval_cards WHERE user=? AND channel=? AND thread=?
+      ORDER BY created DESC LIMIT 40`).all(event.user, event.channel, event.thread).map(({ id }) => this.approval(id));
+  }
+  authorizedMerges() {
+    return this.db.prepare("SELECT id FROM approval_cards WHERE kind='merge' AND state='authorized'")
+      .all().map(({ id }) => this.approval(id));
+  }
+  moveApproval(card, from, to, now = Date.now()) {
+    return this.db.prepare(`UPDATE approval_cards SET state=? WHERE id=? AND state=?
+      AND (state='executing' OR ?='expired' OR expires>?)`).run(to, card.id, from, to, now).changes === 1;
+  }
+  approvalRule(scope, born, now) {
+    return this.db.prepare("SELECT kind FROM approval_rules WHERE scope=? AND issued<=? AND expires>?")
+      .get(scope, born, now)?.kind;
+  }
+  saveApprovalRule(scope, kind, expires, now) {
+    this.db.prepare("DELETE FROM approval_rules WHERE expires<=?").run(now);
+    this.db.prepare("INSERT OR REPLACE INTO approval_rules VALUES(?,?,?,?)").run(scope, kind, now, expires);
+  }
+  approvalSent(id) {
+    return this.db.prepare("SELECT state FROM outbox WHERE id=?").get(`approval:${id}`)?.state === "sent";
   }
   enqueue(id, delivery, text, now = Date.now()) {
     this.db.prepare("INSERT OR IGNORE INTO outbox(id,user,channel,thread,text,due) VALUES(?,?,?,?,?,?)")

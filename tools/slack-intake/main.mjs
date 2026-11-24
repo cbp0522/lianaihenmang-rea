@@ -2,6 +2,8 @@ import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { Approvals, validateApprovalConfig } from "./approvals.mjs";
+import { GitHubApproval } from "./github.mjs";
 import { Bridge } from "./bridge.mjs";
 import { claudeIntake } from "./intake.mjs";
 import { Journal } from "./journal.mjs";
@@ -31,6 +33,7 @@ export function validateConfig(config) {
       (view.protocol !== "https:" && !(view.protocol === "http:" && loopback))) {
     throw new Error("Kandev 查看链接应为本机或 HTTPS 私有地址");
   }
+  validateApprovalConfig(config);
   return config;
 }
 
@@ -75,8 +78,12 @@ async function main() {
   }
   const reports = join(home, "reports");
   await mkdir(reports, { recursive: true, mode: 0o700 });
+  const approvals = config.approvals && new Approvals({
+    config, journal, kandev, github: config.approvals.merge && new GitHubApproval(config),
+    interpret: claudeIntake(config.claudePath, undefined, { approval: true }),
+  });
   const bridge = new Bridge({
-    config, journal, kandev, slack, intake: claudeIntake(config.claudePath),
+    config, journal, kandev, slack, approvals, intake: claudeIntake(config.claudePath),
     saveReport: async (id, content) => {
       const file = join(reports, id + ".md");
       await writeFile(file + ".tmp", content + "\n", { mode: 0o600 });

@@ -47,7 +47,7 @@ export function slackEvent(envelope, config, bot) {
       || typeof event.text !== "string" || !event.text.trim()) return null;
   return {
     id: payload.event_id, user: event.user, channel: event.channel,
-    thread: event.thread_ts || event.ts, text: event.text.trim(),
+    thread: event.thread_ts || event.ts, sentAt: Number(event.ts) * 1000, text: event.text.trim(),
   };
 }
 
