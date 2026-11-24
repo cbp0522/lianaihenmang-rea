@@ -10,6 +10,7 @@ const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const opaque = /^[\w.:-]{1,200}$/u;
 const hash = value => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const credentialPath = /(?:^|[/. _-])(?:\.env|\.ssh|\.aws|secrets?|credentials?|tokens?|keychains?|id_rsa|id_ed25519)(?:[/. _-]|$)|\.(?:pem|key|p12|pfx|mobileprovision)$/i;
+const planReadTool = "kandev_get_task_plan_kandev";
 const friendlyType = {
   file_read: "读取文件", file_write: "写入文件", command: "运行命令",
   network: "网络访问", mcp_tool: "调用 MCP 工具", other: "其他工具操作",
@@ -101,8 +102,10 @@ export class Approvals {
     const options = item.options.filter(option => ["allow_once", "reject_once"].includes(option.kind)
         && opaque.test(option.option_id)).map(({ kind, option_id }) => ({ kind, option_id }));
     const read = await this.read(item.action);
+    const planRead = type === "other" && item.action?.redacted === false
+      && item.title === planReadTool && item.action.description === planReadTool;
     const mark = hash([identity, item.tool_call_id, item.created_at, item.title, item.action, item.options, task.workflow_step_id]);
-    return { identity, type, options, read, mark, step: task.workflow_step_id };
+    return { identity, type, options, read, planRead, mark, step: task.workflow_step_id };
   }
 
   async pollTask(binding, task) {
@@ -124,9 +127,10 @@ export class Approvals {
       } else {
         const name = publicText(task.title);
         const detail = subject.read ? `文件 ${publicText(subject.read.path)}` : "详细参数或权限范围请在 Kandev 查看。";
+        const operation = subject.planRead ? "读取任务计划" : friendlyType[subject.type];
         const canAllow = subject.read && subject.options.some(option => option.kind === "allow_once");
         this.journal.enqueue(`approval:${id}`, binding, [
-          `工具审批 ${id} · ${name} · ${friendlyType[subject.type]}`, detail,
+          `工具审批 ${id} · ${name} · ${operation}`, detail,
           canAllow ? "在此线程回复「允许这次」「拒绝」或「为什么需要」。" : "此操作的批准需在 Kandev 操作。可在此回复「拒绝」或「为什么需要」。",
           `同时有多条时，以「审批 ${id}」开头。有效期至请求发出后 10 分钟。`,
         ].join("\n"), now);
@@ -228,8 +232,12 @@ export class Approvals {
       return "这条回复的授权范围不够明确，请再明确一次。";
     }
     if (intent === "explain") {
-      const name = card.subject.read ? `本任务的 Agent 请求读取 ${publicText(basename(card.subject.read.path))}。` : "工具的完整参数和理由请在 Kandev 核对。";
-      return card.kind === "merge" ? "合并会更改目标分支。系统会再次核对 HEAD、CI、独立审查和 GitHub 合并状态。" : name;
+      if (card.kind === "merge") return "合并会更改目标分支。系统会再次核对 HEAD、CI、独立审查和 GitHub 合并状态。";
+      if (card.subject.planRead) {
+        return "Agent 在请求读取 Kandev 任务计划。计划用于查看任务当前记录和前一阶段的交接内容。这条追问没有执行审批。";
+      }
+      if (card.subject.read) return `本任务的 Agent 请求读取 ${publicText(basename(card.subject.read.path))}。`;
+      return "Kandev 未提供可核对的操作用途。请在原会话查看完整参数；当前追问未执行审批。";
     }
     if (card.kind === "tool") return this.resolve(card, intent, event.id);
     if (["reject", "reject_merge"].includes(intent)) {

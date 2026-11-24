@@ -107,6 +107,23 @@ test("工具审批走原线程，追问不执行，批准与 Slack 重投只交�
   assert.equal(s.calls.length, 1);
 });
 
+test("已知计划读取说明请求用途，仍需在原生界面批准", async t => {
+  const s = setup(t);
+  const tool = "kandev_get_task_plan_kandev";
+  s.request(1, { title: tool, action: { type: "other", description: tool, redacted: false } });
+  await s.bridge.notify();
+  await s.flush();
+  assert.match(s.posts[0], /读取任务计划/);
+  s.bridge.accept(s.event("why-plan", "为什么需要？"), "UBOT");
+  await s.bridge.processOne();
+  await s.flush();
+  assert.match(s.posts.at(-1), /计划用于查看任务当前记录和前一阶段的交接内容/);
+  assert.equal(s.calls.length, 0);
+  s.bridge.accept(s.event("allow-plan", "允许这次"), "UBOT");
+  await s.bridge.processOne();
+  assert.equal(s.calls.length, 0);
+});
+
 test("限定只读授权复用在同一任务和文件版本，拒绝相同调用不会续期", async t => {
   const s = setup(t);
   s.request(1);
