@@ -21,6 +21,10 @@ final class WorkbenchModel: ObservableObject {
         session.cancelReplacement()
     }
 
+    func undoReplacement() {
+        session.undoReplacement()
+    }
+
     func updateDraft(_ text: String) {
         session.updateDraft(text)
     }

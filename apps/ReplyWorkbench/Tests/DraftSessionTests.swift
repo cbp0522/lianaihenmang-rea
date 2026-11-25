@@ -102,6 +102,7 @@ final class DraftSessionTests: XCTestCase {
         XCTAssertEqual(session.draft, editedDraft)
         session.cancelReplacement()
         XCTAssertEqual(session, original)
+        XCTAssertFalse(session.canUndoReplacement)
 
         XCTAssertEqual(session.select(.soften), .needsConfirmation)
         session.confirmReplacement()
@@ -117,6 +118,48 @@ final class DraftSessionTests: XCTestCase {
         XCTAssertEqual(session.selectedIntent, .decline)
         XCTAssertEqual(session.draft, ReplyTemplates.text(for: .decline))
         XCTAssertNil(session.pendingIntent)
+    }
+
+    func testUndoRestoresOriginalBytesAndIntentWithoutCopyState() {
+        var session = DraftSession()
+        let original = "  👩‍💻 e\u{301}\r\n晚点聊。 "
+        _ = session.select(.soften)
+        session.updateDraft(original)
+        _ = session.select(.decline)
+        session.confirmReplacement()
+        session.markCopied(session.draft)
+        XCTAssertTrue(session.canUndoReplacement)
+
+        session.undoReplacement()
+
+        XCTAssertEqual(session.selectedIntent, .soften)
+        XCTAssertEqual(Array(session.draft.utf8), Array(original.utf8))
+        XCTAssertEqual(session.copyStatus, .idle)
+        XCTAssertNil(session.lastCopiedText)
+        XCTAssertFalse(session.canUndoReplacement)
+        XCTAssertEqual(session.select(.decline), .needsConfirmation)
+    }
+
+    func testUndoExpiresWhenNewDraftIsEditedOrAnotherTemplateIsApplied() {
+        var session = DraftSession()
+        _ = session.select(.soften)
+        session.updateDraft("晚点聊。")
+        _ = session.select(.decline)
+        session.confirmReplacement()
+        session.updateDraft(session.draft)
+        XCTAssertEqual(session.select(.decline), .unchanged)
+        XCTAssertTrue(session.canUndoReplacement)
+
+        session.updateDraft("新草稿")
+        session.undoReplacement()
+        XCTAssertEqual(session.draft, "新草稿")
+        XCTAssertFalse(session.canUndoReplacement)
+
+        _ = session.select(.soften)
+        session.confirmReplacement()
+        XCTAssertTrue(session.canUndoReplacement)
+        XCTAssertEqual(session.select(.followUp), .applied)
+        XCTAssertFalse(session.canUndoReplacement)
     }
 }
 

@@ -114,6 +114,19 @@ struct WorkbenchView: View {
                 Text("\(model.session.draft.count) 字")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+
+                if model.session.canUndoReplacement {
+                    Button {
+                        isEditing = false
+                        model.undoReplacement()
+                        AccessibilityNotification.Announcement("已恢复之前的草稿").post()
+                    } label: {
+                        Text("撤销模板替换")
+                            .frame(minHeight: 44)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("undoReplacement")
+                }
             }
         }
     }

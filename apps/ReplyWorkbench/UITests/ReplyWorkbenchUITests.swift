@@ -61,13 +61,33 @@ final class ReplyWorkbenchUITests: XCTestCase {
         let replacedDraft = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != nil AND value != '' AND value != %@", edited), object: editor)
         XCTAssertEqual(XCTWaiter.wait(for: [declineSelected, replacedDraft], timeout: 5), .completed)
         XCTAssertTrue(decline.isSelected)
+        XCTAssertTrue(app.staticTexts["copyStatus"].waitForNonExistence(timeout: 5))
+
+        let undo = app.buttons["undoReplacement"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 5))
+        if !undo.isHittable {
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        undo.tap()
+        XCTAssertTrue(undo.waitForNonExistence(timeout: 5))
+        let restoredDraft = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", edited), object: editor)
+        let restoredIntent = XCTNSPredicateExpectation(predicate: NSPredicate(format: "selected == YES"), object: soften)
+        XCTAssertEqual(XCTWaiter.wait(for: [restoredDraft, restoredIntent], timeout: 5), .completed)
+
+        if !decline.isHittable {
+            app.scrollViews.firstMatch.swipeDown()
+        }
+        decline.tap()
+        XCTAssertTrue(replace.waitForExistence(timeout: 5))
+        replace.tap()
+        XCTAssertTrue(replace.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(undo.waitForExistence(timeout: 5))
         let replacement = editor.value as? String ?? ""
         XCTAssertFalse(replacement.isEmpty)
         XCTAssertNotEqual(replacement, edited)
-        XCTAssertTrue(app.staticTexts["copyStatus"].waitForNonExistence(timeout: 5))
-
         focusAtEnd(of: editor)
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: replacement.count))
+        XCTAssertTrue(undo.waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["blankHint"].exists)
         XCTAssertFalse(copy.isEnabled)
         attachScreenshot("空白草稿")
