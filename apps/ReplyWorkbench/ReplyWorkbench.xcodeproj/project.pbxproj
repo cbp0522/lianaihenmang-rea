@@ -46,6 +46,63 @@
 			isa = PBXBuildFile;
 			fileRef = 00000000000000000000006D /* ReplyWorkbenchUITests.swift */;
 		};
+		0000000000000000000000A0 /* KeyboardPanelState.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000090 /* KeyboardPanelState.swift */;
+		};
+		0000000000000000000000A1 /* TextInserting.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000091 /* TextInserting.swift */;
+		};
+		0000000000000000000000A2 /* KeyboardPanelView.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000092 /* KeyboardPanelView.swift */;
+		};
+		0000000000000000000000A3 /* PreviewTextInserter.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000097 /* PreviewTextInserter.swift */;
+		};
+		0000000000000000000000A4 /* KeyboardPanelStateTests.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000098 /* KeyboardPanelStateTests.swift */;
+		};
+		0000000000000000000000A5 /* ReplyIntent.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000064 /* ReplyIntent.swift */;
+		};
+		0000000000000000000000A6 /* ReplyTemplates.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000065 /* ReplyTemplates.swift */;
+		};
+		0000000000000000000000A7 /* KeyboardPanelState.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000090 /* KeyboardPanelState.swift */;
+		};
+		0000000000000000000000A8 /* TextInserting.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000091 /* TextInserting.swift */;
+		};
+		0000000000000000000000A9 /* KeyboardPanelView.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000092 /* KeyboardPanelView.swift */;
+		};
+		0000000000000000000000AA /* KeyboardViewController.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000093 /* KeyboardViewController.swift */;
+		};
+		0000000000000000000000AB /* InputModeSwitchKey.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000094 /* InputModeSwitchKey.swift */;
+		};
+		0000000000000000000000AC /* ProxyTextInserter.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000095 /* ProxyTextInserter.swift */;
+		};
+		0000000000000000000000AD /* ReplyWorkbenchKeyboard.appex in Embed Foundation Extensions */ = {
+			isa = PBXBuildFile;
+			fileRef = 000000000000000000000099 /* ReplyWorkbenchKeyboard.appex */;
+			settings = {ATTRIBUTES = (RemoveHeadersOnCopy, );};
+		};
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,7 +120,28 @@
 			remoteGlobalIDString = 00000000000000000000000A;
 			remoteInfo = ReplyWorkbench;
 		};
+		000000000000000000000044 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 00000000000000000000000D;
+			remoteInfo = ReplyWorkbenchKeyboard;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		000000000000000000000022 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0000000000000000000000AD /* ReplyWorkbenchKeyboard.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		000000000000000000000064 /* ReplyIntent.swift */ = {
@@ -147,6 +225,67 @@
 			path = ReplyWorkbenchUITests.xctest;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		000000000000000000000090 /* KeyboardPanelState.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = KeyboardPanelState.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000091 /* TextInserting.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = TextInserting.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000092 /* KeyboardPanelView.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = KeyboardPanelView.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000093 /* KeyboardViewController.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = KeyboardViewController.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000094 /* InputModeSwitchKey.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = InputModeSwitchKey.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000095 /* ProxyTextInserter.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = ProxyTextInserter.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000096 /* Info.plist */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = text.plist.xml;
+			path = Info.plist;
+			sourceTree = "<group>";
+		};
+		000000000000000000000097 /* PreviewTextInserter.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = PreviewTextInserter.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000098 /* KeyboardPanelStateTests.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = KeyboardPanelStateTests.swift;
+			sourceTree = "<group>";
+		};
+		000000000000000000000099 /* ReplyWorkbenchKeyboard.appex */ = {
+			isa = PBXFileReference;
+			explicitFileType = "wrapper.app-extension";
+			includeInIndex = 0;
+			path = ReplyWorkbenchKeyboard.appex;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -157,6 +296,8 @@
 				000000000000000000000033 /* App */,
 				000000000000000000000034 /* Tests */,
 				000000000000000000000035 /* UITests */,
+				000000000000000000000036 /* KeyboardUI */,
+				000000000000000000000037 /* Keyboard */,
 				000000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -167,6 +308,7 @@
 				000000000000000000000014 /* ReplyWorkbench.app */,
 				000000000000000000000015 /* ReplyWorkbenchTests.xctest */,
 				000000000000000000000016 /* ReplyWorkbenchUITests.xctest */,
+				000000000000000000000099 /* ReplyWorkbenchKeyboard.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -178,6 +320,8 @@
 				000000000000000000000065 /* ReplyTemplates.swift */,
 				000000000000000000000066 /* DraftSession.swift */,
 				000000000000000000000067 /* ClipboardWriting.swift */,
+				000000000000000000000090 /* KeyboardPanelState.swift */,
+				000000000000000000000091 /* TextInserting.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -189,6 +333,7 @@
 				000000000000000000000069 /* WorkbenchModel.swift */,
 				00000000000000000000006A /* WorkbenchView.swift */,
 				00000000000000000000006B /* SystemClipboardWriter.swift */,
+				000000000000000000000097 /* PreviewTextInserter.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -197,6 +342,7 @@
 			isa = PBXGroup;
 			children = (
 				00000000000000000000006C /* DraftSessionTests.swift */,
+				000000000000000000000098 /* KeyboardPanelStateTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -209,6 +355,25 @@
 			path = UITests;
 			sourceTree = "<group>";
 		};
+		000000000000000000000036 /* KeyboardUI */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000092 /* KeyboardPanelView.swift */,
+			);
+			path = KeyboardUI;
+			sourceTree = "<group>";
+		};
+		000000000000000000000037 /* Keyboard */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000093 /* KeyboardViewController.swift */,
+				000000000000000000000094 /* InputModeSwitchKey.swift */,
+				000000000000000000000095 /* ProxyTextInserter.swift */,
+				000000000000000000000096 /* Info.plist */,
+			);
+			path = Keyboard;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -217,9 +382,12 @@
 			buildConfigurationList = 000000000000000000000028 /* Build configuration list for ReplyWorkbench */;
 			buildPhases = (
 				00000000000000000000001E /* Sources */,
+				000000000000000000000022 /* Embed Foundation Extensions */,
 			);
 			buildRules = ();
-			dependencies = ();
+			dependencies = (
+				00000000000000000000003F /* PBXTargetDependency */,
+			);
 			name = ReplyWorkbench;
 			productName = ReplyWorkbench;
 			productReference = 000000000000000000000014 /* ReplyWorkbench.app */;
@@ -255,6 +423,19 @@
 			productReference = 000000000000000000000016 /* ReplyWorkbenchUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		00000000000000000000000D /* ReplyWorkbenchKeyboard */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 00000000000000000000002B /* Build configuration list for ReplyWorkbenchKeyboard */;
+			buildPhases = (
+				000000000000000000000021 /* Sources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = ReplyWorkbenchKeyboard;
+			productName = ReplyWorkbenchKeyboard;
+			productReference = 000000000000000000000099 /* ReplyWorkbenchKeyboard.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -281,6 +462,7 @@
 				00000000000000000000000A /* ReplyWorkbench */,
 				00000000000000000000000B /* ReplyWorkbenchTests */,
 				00000000000000000000000C /* ReplyWorkbenchUITests */,
+				00000000000000000000000D /* ReplyWorkbenchKeyboard */,
 			);
 		};
 /* End PBXProject section */
@@ -298,6 +480,10 @@
 				00000000000000000000007D /* WorkbenchModel.swift in Sources */,
 				00000000000000000000007E /* WorkbenchView.swift in Sources */,
 				00000000000000000000007F /* SystemClipboardWriter.swift in Sources */,
+				0000000000000000000000A0 /* KeyboardPanelState.swift in Sources */,
+				0000000000000000000000A1 /* TextInserting.swift in Sources */,
+				0000000000000000000000A2 /* KeyboardPanelView.swift in Sources */,
+				0000000000000000000000A3 /* PreviewTextInserter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -306,6 +492,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				000000000000000000000080 /* DraftSessionTests.swift in Sources */,
+				0000000000000000000000A4 /* KeyboardPanelStateTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -314,6 +501,21 @@
 			buildActionMask = 2147483647;
 			files = (
 				000000000000000000000081 /* ReplyWorkbenchUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		000000000000000000000021 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0000000000000000000000A5 /* ReplyIntent.swift in Sources */,
+				0000000000000000000000A6 /* ReplyTemplates.swift in Sources */,
+				0000000000000000000000A7 /* KeyboardPanelState.swift in Sources */,
+				0000000000000000000000A8 /* TextInserting.swift in Sources */,
+				0000000000000000000000A9 /* KeyboardPanelView.swift in Sources */,
+				0000000000000000000000AA /* KeyboardViewController.swift in Sources */,
+				0000000000000000000000AB /* InputModeSwitchKey.swift in Sources */,
+				0000000000000000000000AC /* ProxyTextInserter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -329,6 +531,11 @@
 			isa = PBXTargetDependency;
 			target = 00000000000000000000000A /* ReplyWorkbench */;
 			targetProxy = 000000000000000000000043 /* PBXContainerItemProxy */;
+		};
+		00000000000000000000003F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 00000000000000000000000D /* ReplyWorkbenchKeyboard */;
+			targetProxy = 000000000000000000000044 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -421,6 +628,40 @@
 			};
 			name = Release;
 		};
+		000000000000000000000058 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Keyboard/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "回应练习台";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.iosresearch.ReplyWorkbench.Keyboard;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		000000000000000000000059 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Keyboard/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "回应练习台";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.iosresearch.ReplyWorkbench.Keyboard;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -456,6 +697,15 @@
 			buildConfigurations = (
 				000000000000000000000056 /* Debug */,
 				000000000000000000000057 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		00000000000000000000002B /* Build configuration list for ReplyWorkbenchKeyboard */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000058 /* Debug */,
+				000000000000000000000059 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

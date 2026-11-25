@@ -1,8 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct WorkbenchView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @StateObject private var model = WorkbenchModel(clipboard: SystemClipboardWriter())
+    @StateObject private var previewInserter = PreviewTextInserter()
+    @State private var keyboardState = KeyboardPanelState()
     @FocusState private var isEditing: Bool
 
     private static let copiedMessage = "已复制到剪贴板"
@@ -19,6 +22,7 @@ struct WorkbenchView: View {
                 }
                 draftSection
                 copySection
+                keyboardSection
             }
             .padding(20)
             .frame(maxWidth: 680)
@@ -152,6 +156,37 @@ struct WorkbenchView: View {
             } else {
                 statusLine(copyStatusText, identifier: "copyStatus")
             }
+        }
+    }
+
+    private var keyboardSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("在其他 App 中使用")
+                .font(.title2.bold())
+                .accessibilityAddTraits(.isHeader)
+            Text("设置 → 通用 → 键盘 → 键盘 → 添加新键盘 → 回应练习台。无需开启完全访问。")
+                .accessibilityIdentifier("keyboardSetupSteps")
+            Button("打开设置") {
+                UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("openSettings")
+
+            Text("键盘预览")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            KeyboardPanelView(state: $keyboardState, target: previewInserter, leadingAccessory: EmptyView())
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10))
+
+            Text(previewInserter.text.isEmpty ? "尚未插入" : previewInserter.text)
+                .foregroundStyle(previewInserter.text.isEmpty ? .secondary : .primary)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("键盘预览输出")
+                .accessibilityValue(previewInserter.text)
+                .accessibilityIdentifier("keyboardPreviewOutput")
+            Button("清空预览", action: previewInserter.clear)
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("clearKeyboardPreview")
         }
     }
 

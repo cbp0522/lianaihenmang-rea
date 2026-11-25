@@ -49,6 +49,10 @@ jobs:
             -destination "platform=iOS Simulator,id=$IOS_SIMULATOR_UDID" \
             -destination-timeout 120 -derivedDataPath "$RUNNER_TEMP/reply-workbench-derived" \
             -parallel-testing-enabled NO ONLY_ACTIVE_ARCH=YES
+      - name: 检查回应练习台键盘扩展产物
+        run: |
+          bash apps/ReplyWorkbench/check-keyboard-product.sh \
+            "$RUNNER_TEMP/reply-workbench-derived/Build/Products/Debug-iphonesimulator/ReplyWorkbench.app"
       - name: 编译原创 iOS 产品
         run: |
           bash tools/build-ios.sh product simulator "$RUNNER_TEMP/focus-sim"
