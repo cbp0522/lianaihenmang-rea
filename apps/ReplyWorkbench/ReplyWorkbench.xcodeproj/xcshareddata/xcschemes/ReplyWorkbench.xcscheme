@@ -5,6 +5,9 @@
       <BuildActionEntry buildForTesting="YES" buildForRunning="YES" buildForProfiling="YES" buildForArchiving="YES" buildForAnalyzing="YES">
         <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="00000000000000000000000A" BuildableName="ReplyWorkbench.app" BlueprintName="ReplyWorkbench" ReferencedContainer="container:ReplyWorkbench.xcodeproj"/>
       </BuildActionEntry>
+      <BuildActionEntry buildForTesting="YES" buildForRunning="YES" buildForProfiling="YES" buildForArchiving="YES" buildForAnalyzing="YES">
+        <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="00000000000000000000000D" BuildableName="ReplyWorkbenchKeyboard.appex" BlueprintName="ReplyWorkbenchKeyboard" ReferencedContainer="container:ReplyWorkbench.xcodeproj"/>
+      </BuildActionEntry>
     </BuildActionEntries>
   </BuildAction>
   <TestAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.DebuggerFoundation.Launcher.LLDB" shouldUseLaunchSchemeArgsEnv="YES">
