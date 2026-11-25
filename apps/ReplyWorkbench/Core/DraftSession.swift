@@ -9,6 +9,11 @@ enum SelectionOutcome: Equatable {
 }
 
 struct DraftSession: Equatable {
+    private struct ReplacementSnapshot: Equatable {
+        let intent: ReplyIntent
+        let draft: String
+    }
+
     private static let blankCharacters = CharacterSet.whitespacesAndNewlines
         .subtracting(CharacterSet(charactersIn: "\u{200B}"))
 
@@ -17,12 +22,14 @@ struct DraftSession: Equatable {
     private(set) var pendingIntent: ReplyIntent?
     private(set) var copyStatus: CopyStatus = .idle
     private(set) var lastCopiedText: String?
+    private var replacementSnapshot: ReplacementSnapshot?
 
     var isDraftBlank: Bool {
         draft.trimmingCharacters(in: Self.blankCharacters).isEmpty
     }
 
     var canCopy: Bool { selectedIntent != nil && !isDraftBlank }
+    var canUndoReplacement: Bool { replacementSnapshot != nil }
 
     var hasProtectedEdits: Bool {
         guard let selectedIntent, !isDraftBlank else { return false }
@@ -42,16 +49,30 @@ struct DraftSession: Equatable {
     }
 
     mutating func confirmReplacement() {
-        guard let pendingIntent else { return }
+        guard let pendingIntent, let selectedIntent else { return }
+        let snapshot = ReplacementSnapshot(intent: selectedIntent, draft: draft)
         applyTemplate(for: pendingIntent)
+        replacementSnapshot = snapshot
     }
 
     mutating func cancelReplacement() {
         pendingIntent = nil
     }
 
+    mutating func undoReplacement() {
+        guard let replacementSnapshot else { return }
+        selectedIntent = replacementSnapshot.intent
+        draft = replacementSnapshot.draft
+        copyStatus = .idle
+        lastCopiedText = nil
+        self.replacementSnapshot = nil
+    }
+
     mutating func updateDraft(_ text: String) {
         guard selectedIntent != nil else { return }
+        if replacementSnapshot != nil, !draft.utf8.elementsEqual(text.utf8) {
+            replacementSnapshot = nil
+        }
         draft = text
         if lastCopiedText?.utf8.elementsEqual(text.utf8) != true {
             copyStatus = .idle
@@ -77,5 +98,6 @@ struct DraftSession: Equatable {
         pendingIntent = nil
         copyStatus = .idle
         lastCopiedText = nil
+        replacementSnapshot = nil
     }
 }
